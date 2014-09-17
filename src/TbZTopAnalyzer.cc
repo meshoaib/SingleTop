@@ -1129,7 +1129,7 @@ if(doPileup_)
          
          STVariable_is3elec->Fill(ST_Variable,MyWeight)                   ;
           ElecPt_is3elec ->Fill(ElecPt,MyWeight)                          ;               
-          Cutflow_AllComb        ->Fill(0)                                ;
+          //Cutflow_AllComb        ->Fill(0)                                ;
           
           cout<<"Jets multi in is3e: "<< njets <<endl ;
           cout<<"Jets multi from vec in is3e: "<<nonbjetcontainer.size() <<endl;
@@ -1245,7 +1245,7 @@ if(doPileup_)
       STVariable_is3muon->Fill(ST_Variable,MyWeight)                      ;
       
        MuonsPt_is3muon ->Fill(MuonsPt,MyWeight)                           ;      
-       Cutflow_AllComb->Fill(1)                                           ;
+       //Cutflow_AllComb->Fill(1)                                           ;
        jets_multi_is3muon     ->Fill(njets,MyWeight)                      ;
       // if()
        LeadingJets_pt_is3muon ->Fill(pt_jets,MyWeight)                    ;
@@ -1347,7 +1347,7 @@ if(doPileup_)
           
           MuonsPt_is2muon1elec  ->Fill(MuonsPt,MyWeight)                        ;
           ElecPt_is2muon1elec   ->Fill(ElecPt,MyWeight)                         ;
-          Cutflow_AllComb->Fill(2)                                     ;
+          //Cutflow_AllComb->Fill(2)                                     ;
           jets_multi_is2muon1elec     ->Fill(njets,MyWeight)                    ;
           LeadingJets_pt_is2muon1elec ->Fill(pt_jets,MyWeight)                  ;
           Pt_Welectrons_is2muon1elec  ->Fill(Pt_Welectrons,MyWeight)            ;
@@ -1454,7 +1454,7 @@ if(doPileup_)
           
        MuonsPt_is1muon2elec ->Fill(MuonsPt,MyWeight)                            ;
        ElecPt_is1muon2elec  ->Fill(ElecPt,MyWeight)                             ;       
-       Cutflow_AllComb->Fill(3)                                                 ;
+       //Cutflow_AllComb->Fill(3)                                                 ;
        jets_multi_is2elec1muon     ->Fill(njets,MyWeight)                       ;
        LeadingJets_pt_is2elec1muon ->Fill(pt_jets,MyWeight)                     ;
        Pt_Wmuons_is2elec1muon      ->Fill(Pt_Wmuons,MyWeight)                   ;
@@ -1828,13 +1828,9 @@ TbZTopAnalyzer::beginJob()
  edm::Service<TFileService> fs1;
  //histos for cut flow
  m_muonCutFlow          = fs1->make<TH1D> ("muonsProd_cutFlow","muons cut flow",13,0.,13.)                      ;
- //m_electronCutFlow      = fs1->make<TH1D> ("electronsProd_cutFlow","electrons cut flow",15,0.,15.)              ;
- //...
  elect_pt               = fs1->make<TH1D> ("elect_pT"," electron pT",100,0.,100.)                               ;
  inv_Z_mass_ee          = fs1->make<TH1D> ("zee_inv_mass","zee_inv_mass",40,70.,110.)                           ;
- // pT_Z_ee                = fs1->make<TH1D> ("pT_Z_ee","pT Z plot",100,0.,200.)                                ;
  z_ee_dphi              = fs1->make<TH1D> ("z_ee_dphi","Z electrons delta phi",100, -3.14,3.14)                 ;
- //Electron_acop          = fs1->make<TH1D> ("Electron_acop","electron acop plot",100,-3.14,3.14)                 ;
  wenu_mT                = fs1->make<TH1D> ("we_trans_mass","we_trans_mass",40,0.,200.)                          ;
  //----
  wenu_mT_New            = fs1->make<TH1D> ("we_trans_mass_New","we_trans_mass-New",40,0.,200.)                  ;
@@ -2021,38 +2017,20 @@ TbZTopAnalyzer::beginJob()
   jets_multi_is3muon           = fs1->make<TH1D> ("jets_multi_is3muon","jets_multi_is3muon", 10, 0., 10.)            ;
   jets_multi_is3elec           = fs1->make<TH1D> ("jets_multi_is3elec","jets_multi_is3elec", 10, 0., 10.)            ;
   //
-  H1_Pt_Welectrons             = fs1->make<TH1D> ("Pt_Welectrons", "Pt_Welectrons",40,0.,200)                               ;
-  Pt_Welectrons_is2muon1elec   = fs1->make<TH1D> ("Pt_Welec_is2muon1elec", "Pt_Welec_is2muon1elec",40,0.,200)               ;
+  H1_Pt_Welectrons             = fs1->make<TH1D> ("Pt_Welectrons", "Pt_Welectrons",40,0.,200)                         ;
+  Pt_Welectrons_is2muon1elec   = fs1->make<TH1D> ("Pt_Welec_is2muon1elec", "Pt_Welec_is2muon1elec",40,0.,200)         ;
   
-  Pt_Welectrons_is3elec        = fs1->make<TH1D> ("Pt_Welec_is3elec", "Pt_Welectrons",40,0.,200)                            ;                                                                                                                            
+  Pt_Welectrons_is3elec        = fs1->make<TH1D> ("Pt_Welec_is3elec", "Pt_Welectrons",40,0.,200)                      ;                                                                                                                            
   H1_Pt_Wmuons                 = fs1->make<TH1D> ("Pt_Wmuons", "Pt_Wmuons",40,0.,200)                               ;
   Pt_Wmuons_is2elec1muon       = fs1->make<TH1D> ("Pt_Wmuons_is2elec1muon", "Pt_Wmuons_is2elec1muon",40,0.,200)     ;
   Pt_Wmuons_is3muon            = fs1->make<TH1D> ("Pt_Wmuons_is3muon", "Pt_Wmuons_is3muon",40,0.,200)     ;
-  //--- 06-02-2104----
-  //Cutflow_AllComb              = fs1->make<TH1D> ("Cutflow_AllComb","Cutflow_AllComb", 5, 0.,5.)        ;
   //-------                                                                                                    
-  H1_pT_Zee                   = fs1->make<TH1D> ("pT_Zee","pT_Zee", 100.,0.,200.)                              ;
-  trueTop_wbElec              = fs1->make<TH1D> ("InvM_trueTop_wbElec","InvM_trueTop_wbElec",40, 0., 400.)     ;
-  H1_DPhi_true_wb             = fs1->make<TH1D> ("DPhi_true_wb","DPhi_true_wb",60, -3, 3)                      ;
-  H1_TOPtrue_transM_Elec      = fs1->make<TH1D> ("t_trans_M_trueweb","t_trans_M_trueweb", 40, 0, 400)          ;
   wenu_transM2                = fs1->make<TH1D> ("we_trans_mass2","we_trans_mass2", 40, 0, 400)                ;
   w_mT2                       = fs1->make<TH1D> ("wu_mass_trans2","wu_mass_trans2", 40, 0, 400)                ;
-  trueTop_wbMuons             = fs1->make<TH1D> ("InvM_trueTop_wbMuon","InvM_trueTop_wbMuons",40, 0., 400.)    ;
-  H1_DPhi_true_wbMu           = fs1->make<TH1D> ("DPhi_true_wub","DPhi_true_wub",60, -3, 3)                    ;
-  H1_TOPtrue_transM_Muon      = fs1->make<TH1D> ("t_transM_truewub","t_transM_truewub", 40, 0, 400)            ;
-  
-  //-----
-  // MET_After_is3muon           = fs1->make<TH1D> ("MET_After_is3muon", "MET_After_is3muon", 40, 0., 200.)        ;
-  // MET_After_is3elec           = fs1->make<TH1D> ("MET_After_is3elec", "MET_After_is3elec", 40, 0., 200.)        ;
-  
-  
   //-----
   LeadingElec_Pt              = fs1->make<TH1D> ("LeadingElec_Pt","LeadingElec_Pt",40,0.,200.)                  ;
   SubLeadingElec_Pt           = fs1->make<TH1D> ("SubLeadingElec_Pt","SubLeadingElec_Pt",40,0.,200.)            ;
   ThrdLeadingElec_Pt          = fs1->make<TH1D> ("ThrdLeadingElec_Pt","ThrdLeadingElec_Pt",40,0.,200.)          ;
-  
-   //Bjet_Multiplicity_AfterCut  = fs1->make<TH1D> ("Bjet_Multi_AfterCut", "Bjet_Multi_AfterCut", 10,0.,10);
-   //Jets_Multiplicity_AfterCut  = fs1->make<TH1D> ("Jets_Multi_AfterCut", "Jets_Multi_AfterCut", 10,0.,10);
    
    H1_noOfleptons      = fs1->make<TH1D> ("H1_noOfleptons", "H1_noOfleptons", 100, 0.0, 10.0)         ;
    H1_noOfMuon      = fs1->make<TH1D> ("H1_noOfMuon", "H1_noOfMuon", 100, 0.0, 10.0)                  ;
@@ -2146,8 +2124,8 @@ TbZTopAnalyzer::beginJob()
   // ==============
   relIso_H1                         = fs1->make<TH1D>("relIso","relIso_H1",10,0.,10);
   //===============
-  H1_Elec_Eta_New = fs1->make<TH1D>("Elec_Eta","Elec_Eta",60, -3., 3.)        ;
-  H1_Elec_Phi_New = fs1->make<TH1D>("Elec_Phi_New","Elec_Phi_New",60, -3., 3.);
+ // H1_Elec_Eta_New = fs1->make<TH1D>("Elec_Eta","Elec_Eta",60, -3., 3.)        ;
+  //H1_Elec_Phi_New = fs1->make<TH1D>("Elec_Phi_New","Elec_Phi_New",60, -3., 3.);
   //===============
   Number_PrimaryVertex  = fs1->make<TH1D>("Number_PrimaryVertex","Number_PrimaryVertex",40, 0., 40.);
   //----
@@ -2160,8 +2138,7 @@ TbZTopAnalyzer::beginJob()
    HT_AllJets_is3muon      = fs1->make<TH1D>("HT_AllJets_is3muon", "HT_AllJets_is3muon", 100, 0, 700)               ;
    HT_AllJets_is2muon1elec = fs1->make<TH1D>("HT_AllJets_is2muon1elec", "HT_AllJets_is2muon1elec", 100, 0, 700)     ;
    HT_AllJets_is1muon2elec = fs1->make<TH1D>("HT_AllJets_is1muon2elec", "HT_AllJets_is1muon2elec", 100, 0, 700)     ;
-   
-  
+    
   InvZmass_vs_MET_is3elec      = fs1->make<TH2D> ("InvZmass_vs_MET_is3elec","InvZmass_vs_MET_is3elec",100,50.,120,100,0.,100.)             ;
   InvZmass_vs_MET_is3muon      = fs1->make<TH2D> ("InvZmass_vs_MET_is3muon","InvZmass_vs_MET_is3muon",100,50.,120,100,0.,100.)             ;
   InvZmass_vs_MET_is2muon1elec = fs1->make<TH2D> ("InvZmass_vs_MET_is2muon1elec","InvZmass_vs_MET_is2muon1elec",100,50.,120,100,0.,100.)   ;
@@ -2176,30 +2153,19 @@ TbZTopAnalyzer::beginJob()
   MuIso_vs_MET_is3muon          = fs1->make<TH2D> ("MuIso_vs_MET_is3muon","MuIso_vs_MET_is3muon",100, 0.0, 10.0, 100,0.,100. )             ;
   MuIso_vs_MET_is1muon2elec     = fs1->make<TH2D> ("MuIso_vs_MET_is1muon2elec","MuIso_vs_MET_is1muon2elec",100, 0.0, 10.0, 100,0.,100. )   ;
   MuIso_vs_MET_is2muon1elec     = fs1->make<TH2D> ("MuIso_vs_MET_is2muon1elec","MuIso_vs_MET_is2muon1elec",100, 0.0, 10.0, 100,0.,100. )   ;
-  
-  
+    
   ST_vs_MET_is3elec          = fs1->make<TH2D> ("ST_vs_MET_is3elec", "ST_vs_MET_is3elec",100, 0.0, 700., 100, 0.0, 150.0)                  ;
   ST_vs_MET_is3muon          = fs1->make<TH2D> ("ST_vs_MET_is3muon", "ST_vs_MET_is3muon",100, 0.0, 700., 100, 0.0, 150.0)                  ;
   ST_vs_MET_is2muon1elec     = fs1->make<TH2D> ("ST_vs_MET_is2muon1elec", "ST_vs_MET_is2muon1elec",100, 0.0, 700., 100, 0.0, 150.0)        ;
   ST_vs_MET_is1muon2elec     = fs1->make<TH2D> ("ST_vs_MET_is1muon2elec", "ST_vs_MET_is1muon2elec",100, 0.0, 700., 100, 0.0, 150.0)        ;
-  
-  
+
   bjet_mult_is3elec        = fs1->make<TH1D> ("bjet_mult_is3elec","bjet_mult_is3elec",10, 0.,10.)                        ;
   bjet_mult_is3muon        = fs1->make<TH1D> ("bjet_mult_is3muon","bjet_mult_is3muon",10, 0.,10.)                        ;
   bjet_mult_is2muon1elec   = fs1->make<TH1D> ("bjet_mult_is2muon1elec","bjet_mult_is2muon1elec",10, 0.,10.)               ;
   bjet_mult_is1muon2elec   = fs1->make<TH1D> ("bjet_mult_is1muon2elec","bjet_mult_is1muon2elec",10, 0.,10.)               ;
   //-----------------
-  
-  // inv_Z_mass_is2elec1muon_Backgrnd     = fs1->make<TH1D>("inv_Z_mass_is2elec1muon_Backgrnd","inv_Z_mass_is2elec1muon_Backgrnd",40,70.,110.) ;
-  // inv_Z_mass_is2muon1elec_Backgrnd     = fs1->make<TH1D>("inv_Z_mass_is2muon1elec_Backgrnd","inv_Z_mass_is2muon1elec_Backgrnd",40,70.,110.) ;
-  // inv_Z_mass_is3muon_Backgrnd          = fs1->make<TH1D>("inv_Z_mass_is3muon_Backgrnd","inv_Z_mass_is3muon_Backgrnd",40,70.,110.) ;
-  // inv_Z_mass_is3elec_Backgrnd          = fs1->make<TH1D>("inv_Z_mass_is3elec_Backgrnd","inv_Z_mass_is3elec_Backgrnd",40,70.,110.) ;
- //-------
 inv_Z_mass_is3elec_Backgrnd_0bjet      = fs1->make<TH1D>("inv_Z_mass_is3elec_Backgrnd_0bjet","inv_Z_mass_is3elec_Backgrnd_0bjet",40,70.,110.) ;
-//inv_Z_mass_is3elec_Backgrnd_GrtrDesc   = fs1->make<TH1D>("inv_Z_mass_is3elec_Backgrnd_GrtrDesc","inv_Z_mass_is3elec_Backgrnd_GrtrDesc",40,70.,110.) ;
- //----
 inv_Z_mass_is3muon_Backgrnd_0bjet      = fs1->make<TH1D>("inv_Z_mass_is3muon_Backgrnd_0bjet","inv_Z_mass_is3muon_Backgrnd_0bjet",40,70.,110.) ;
-//inv_Z_mass_is3muon_Backgrnd_GrtrDesc   = fs1->make<TH1D>("inv_Z_mass_is3muon_Backgrnd_GrtrDesc","inv_Z_mass_is3muon_Backgrnd_GrtrDesc",40,70.,110.) ;
 inv_Z_mass_is2muon1elec_Backgrnd_0bjet = fs1->make<TH1D>("inv_Z_mass_is2muon1elec_Backgrnd_0bjet","inv_ZMass_is2muon1elec_Backgrnd_0bjet",40,70.,110.) ; 
 inv_Z_mass_is2elec1muon_Backgrnd_0bjet = fs1->make<TH1D>("inv_Z_mass_is2elec1muon_Backgrnd_0bjet","inv_ZMass_is2elec1muon_Backgrnd_0bjet",40,70.,110.) ;
 //-----------170814------
@@ -2219,12 +2185,6 @@ H1_jetsPt_is2muon1elec   = fs1->make<TH1D> ("H1_jetsPt_is2muon1elec","H1_jetsPt_
 H1_jetsPhi_is1muon2elec   = fs1->make<TH1D> ("H1_jetsPhi_is1muon2elec","H1_jetsPhi_is1muon2elec", 100.0,-2.5,2.5)    ;
 H1_jetsEta_is1muon2elec   = fs1->make<TH1D> ("H1_jetsEta_is1muon2elec", "H1_jetsEta_is1muon2elec", 100,-2.5,2.5)     ;
 H1_jetsPt_is1muon2elec    = fs1->make<TH1D> ("H1_jetsPt_is1muon2elec","H1_jetsPt_is1muon2elec",100,0.,200.)          ;
-
-
-//---------------------------------------------------------------------------------------------------------------------
-
-
-
 //----------240814---
 TNPUTrue_     = fs1  ->make<TH1D> ("TNPUTrue","pileUp MC 2012 True distribution",60,0.,60.)        ;
 TNPUInTime_   = fs1  ->make<TH1D> ("TNPUInTime","pileUp MC 2012 observed distribution",60,0.,60.)  ;
@@ -2239,15 +2199,16 @@ TNVTX_        = fs1  ->make<TH1D>("TNVTX","No. reconstructed vertices",60,0.,60.
   RWTTrue_ = fs1->make<TH1D>("RWTTrue","Reweighted True pileup interactions",60,0.,60.);
   RWTInTime_ = fs1->make<TH1D>("RWTInTime","Reweighted in-time pileup interactions",60,0.,60.);
 // TNVTX_ = fs->make<TH1D>("TNVTX","No. reconstructed vertices",40,0.,40.);
-  WGT_          = fs1->make<TH1D>("WGT","Event weight",50,0.,10.);
+  //WGT_          = fs1->make<TH1D>("WGT","Event weight",50,0.,10.);
 
   WeightVsNint_ = fs1->make<TProfile>("WeightVsNint","Event weight vs N_int",50,0.,50.,0.,10.);
 //--------------------------------------------------------------------------------------------------------------------
+H1_pT_Zee                   = fs1->make<TH1D> ("pT_Zee","pT_Zee", 100.,0.,200.)                              ;
 //-----130914 -------------
-h_bJetsEta = fs1->make<TH1D>("bTaggedJetEta","eta of the bTagged jets",100,-5,5);
+//h_bJetsEta = fs1->make<TH1D>("bTaggedJetEta","eta of the bTagged jets",100,-5,5);
 
 //-----------
-h_bJetsEta ->Sumw2() ;
+//h_bJetsEta ->Sumw2() ;
 //-----------
 RWTInTime_ ->Sumw2() ;
 RWTTrue_   ->Sumw2() ;
@@ -2255,7 +2216,7 @@ TNPUTrue_      ->Sumw2() ;
 TNPUInTime_    ->Sumw2() ; 
 WeightVsNint_  ->Sumw2() ;
 TNVTX_   ->Sumw2() ;
-WGT_  ->Sumw2() ;
+//WGT_  ->Sumw2() ;
 //-----------
 H1_jetsPhi_is3elec      ->Sumw2() ;
 H1_jetsEta_is3elec      ->Sumw2() ;
@@ -2326,8 +2287,8 @@ inv_Z_mass_is2elec1muon_Backgrnd_0bjet ->Sumw2() ;
   
   //------
   Number_PrimaryVertex           ->Sumw2() ;
-  H1_Elec_Eta_New                ->Sumw2() ;
-  H1_Elec_Phi_New                ->Sumw2() ;
+ // H1_Elec_Eta_New                ->Sumw2() ;
+ // H1_Elec_Phi_New                ->Sumw2() ;
   relIso_H1                      ->Sumw2() ;
   //----
   ElecPt_is3elec_Final            ->Sumw2() ;
@@ -2616,17 +2577,17 @@ inv_Z_mass_is2elec1muon_Backgrnd_0bjet ->Sumw2() ;
    Pt_Wmuons_is2elec1muon      ->Sumw2()    ;
    Pt_Wmuons_is3muon           ->Sumw2()    ;
    //--- 06-02-2104----                     
-   Cutflow_AllComb             ->Sumw2()    ;
+   //Cutflow_AllComb             ->Sumw2()    ;
    //-------                   
    H1_pT_Zee                    ->Sumw2()   ;
-   trueTop_wbElec               ->Sumw2()   ;
-   H1_DPhi_true_wb              ->Sumw2()   ;
-   H1_TOPtrue_transM_Elec       ->Sumw2()   ;
+   //trueTop_wbElec               ->Sumw2()   ;
+   //H1_DPhi_true_wb              ->Sumw2()   ;
+   //H1_TOPtrue_transM_Elec       ->Sumw2()   ;
    wenu_transM2                 ->Sumw2()   ;
    w_mT2                        ->Sumw2()   ;
-   trueTop_wbMuons              ->Sumw2()   ;
-   H1_DPhi_true_wbMu            ->Sumw2()   ;
-   H1_TOPtrue_transM_Muon       ->Sumw2()   ;
+   //trueTop_wbMuons              ->Sumw2()   ;
+  // H1_DPhi_true_wbMu            ->Sumw2()   ;
+  // H1_TOPtrue_transM_Muon       ->Sumw2()   ;
   // -----
    // MET_After_is3muon            ->Sumw2();  
    // MET_After_is3elec            ->Sumw2();
@@ -2808,8 +2769,8 @@ TbZTopAnalyzer::endJob()
    H1_pT_Zee                    ->GetXaxis()->SetTitle ("[GeV/c]")                   ;
    H1_pT_Zee                    ->GetYaxis()->SetTitle ("Events")                    ;
    //
-   Cutflow_AllComb              ->GetXaxis()->SetTitle ("[eee][uuu][uue][eeu]")      ;
-   Cutflow_AllComb              ->GetYaxis()->SetTitle ("entries/1")                 ;
+   //Cutflow_AllComb              ->GetXaxis()->SetTitle ("[eee][uuu][uue][eeu]")      ;
+   //Cutflow_AllComb              ->GetYaxis()->SetTitle ("entries/1")                 ;
    //
    Pt_Wmuons_is3muon           ->GetXaxis()->SetTitle ("Pt_Wmu (GeV/c) [uuu]")       ;
    Pt_Wmuons_is3muon           ->GetYaxis()->SetTitle ("Entries/ 5 GeV")             ;
