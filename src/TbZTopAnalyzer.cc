@@ -1082,30 +1082,16 @@ if(doPileup_)
          
        }//END OF IF-LOOP
        delete Mez;
-       
-      // if( metPtCut_ && nleptons == 3 )
-       //  {
-       //  Bjet_Multiplicity_AfterCut ->Fill(nbtagjets);
-      //   Jets_Multiplicity_AfterCut ->Fill(njets);
-       //  }
-         
+
        //==============================================
        //         COMBINATIONS                        =
        //==============================================
        
 
        // ======================= is3elec      =====================
-
-       // if(nbtagjets == 1 && metPtCut_ && jets->size()> 1 && is3elec ) ;  e_mWT1 > 0. isW_e isWe_New e_mWT2 
-       
-       //Without MET CUT
        if(nelectrns == 3 && is2elec && isWe_New && nmuons ==0  &&  ELECCTRON_MSS >0. && e_mWT2 > 0. && ELECCTRON_MSS >= MinZMAss_ && ELECCTRON_MSS < MaxZMass_)
-      
-       //With MET CUT
-       // if(nelectrns == 3 && is2elec && isW_e && nmuons ==0  &&  ELECCTRON_MSS >0. && e_mWT1 > 0. /*nleptons == 3 is3elec*/ )
-       { 
-       
-          m_muonCutFlow     ->Fill(3) ; // Events after nelectrns == 3 && is2elec && isWe_New && nmuons ==0  &&  ELECCTRON_MSS >0. && e_mWT2 > 0. cut
+       {        
+       m_muonCutFlow     ->Fill(3) ; // Events after nelectrns == 3 && is2elec && isWe_New && nmuons ==0  &&  ELECCTRON_MSS >0. && e_mWT2 > 0. cut
        // ---- 170814------
        for(unsigned int k = 0; k < nonbjetcontainer.size(); k++ )
        {
@@ -1136,47 +1122,29 @@ if(doPileup_)
           
           jets_multi_is3elec     ->Fill(njets,MyWeight)                   ;
           //if(pt_jets > 0.)
+          
+          // Leading jets 
           for(unsigned int k = 0; k < LeadngJetVec.size(); k++)
           {
           double LJetPt = LeadngJetVec.at(k).Pt();
           LeadingJets_pt_is3elec ->Fill(LJetPt,MyWeight)                  ;
           }
-          Pt_Welectrons_is3elec  ->Fill(Pt_Welectrons,MyWeight)           ;         
-          // double met_pt_is3elec  = 0.                                  ;
-          // met_pt_is3elec         = met->pt()                           ;
-          // met_pt_is3elec_H1      ->Fill(met_pt_is3elec)                ;
+          
+          Pt_Welectrons_is3elec  ->Fill(Pt_Welectrons,MyWeight)           ; 
           met_pt_is3elec_H1      ->Fill(met->pt(),MyWeight)               ;
-      
-
-          // if(desc < BtagDiscrCut_)
-          // {
-         //  inv_Z_mass_is3elec_Backgrnd ->Fill(ELECCTRON_MSS,MyWeight);
-         //  }
-
+          
           if(nbtagjets == 0)
            {
            inv_Z_mass_is3elec_Backgrnd_0bjet ->Fill(ELECCTRON_MSS,MyWeight);
            }
-
-       //   if(desc > BtagDiscrCut_)
-       //   {
-       //   inv_Z_mass_is3elec_Backgrnd_GrtrDesc ->Fill(ELECCTRON_MSS,MyWeight);
-       //   }
-
-
-         // if(ELECCTRON_MSS >= MinZMAss_ && ELECCTRON_MSS < MaxZMass_ )                         
-         inv_Z_mass_is3elec ->Fill(ELECCTRON_MSS,MyWeight)                               ;
-         pT_Z_is3elec       ->Fill(pT_Z_ee,MyWeight)                                     ;
-         eta_Zee_is3elec    ->Fill(eta_Z_ee,MyWeight)                                    ;        
-
+                     
+         inv_Z_mass_is3elec ->Fill(ELECCTRON_MSS,MyWeight)                      ;
+         pT_Z_is3elec       ->Fill(pT_Z_ee,MyWeight)                            ;
+         eta_Zee_is3elec    ->Fill(eta_Z_ee,MyWeight)                           ;        
          tbz_wenu_cand = tbz_el+tbz_met_elec                                    ;
-         wenu_pt_is3elec->Fill(tbz_wenu_cand.Pt(),MyWeight)                              ;         
-         // if(tbz_wenu_cand.M() > 1.)                                             
-                                                                                
-         //wenu_mT_is3elec->Fill( tbz_wenu_cand.Mt() )                          ;        
-         if(e_mWT2 > 0.)  wenu_mT_is3elec->Fill(e_mWT2,MyWeight );                       
-                                                                                
-         wenu_m_is3elec->Fill( tbz_wenu_cand.M(),MyWeight)                               ;         
+         wenu_pt_is3elec->Fill(tbz_wenu_cand.Pt(),MyWeight)                     ;               
+         if(e_mWT2 > 0.)  wenu_mT_is3elec->Fill(e_mWT2,MyWeight )               ;                                                                                
+         wenu_m_is3elec->Fill( tbz_wenu_cand.M(),MyWeight)                      ;         
          TLorentzVector e_corr_top_is3elec                                      ;
          TLorentzVector e_corr_b_is3elec                                        ;  
          
@@ -1245,18 +1213,17 @@ if(doPileup_)
       STVariable_is3muon->Fill(ST_Variable,MyWeight)                      ;
       
        MuonsPt_is3muon ->Fill(MuonsPt,MyWeight)                           ;      
-       //Cutflow_AllComb->Fill(1)                                           ;
        jets_multi_is3muon     ->Fill(njets,MyWeight)                      ;
-      // if()
-       LeadingJets_pt_is3muon ->Fill(pt_jets,MyWeight)                    ;
-       Pt_Wmuons_is3muon      ->Fill(Pt_Wmuons,MyWeight)                  ;    
+
+         // Leading jets 
+          for(unsigned int k = 0; k < LeadngJetVec.size(); k++)
+          {
+          double LJetPt = LeadngJetVec.at(k).Pt();
+          LeadingJets_pt_is3muon ->Fill(pt_jets,MyWeight)                 ;
+          }
        
-       // double met_pt_is3muon  = 0.                            ;    
-       // met_pt_is3muon         = met->pt()                     ;
-       //met_pt_is3muon_H1      ->Fill(met_pt_is3muon)           ;
-       
+       Pt_Wmuons_is3muon      ->Fill(Pt_Wmuons,MyWeight)                  ; 
        met_pt_is3muon_H1      ->Fill(met->pt() ,MyWeight)                 ;
-      // if( MOUN_ZMM>= MinZMAss_ && MOUN_ZMM < MaxZMass_ )  
        inv_Z_mass_is3muon ->Fill(MOUN_ZMM,MyWeight)                       ;
        
           if(nbtagjets == 0)
@@ -1265,17 +1232,13 @@ if(doPileup_)
            }
        pT_Z_is3muon       ->Fill(pT_Z_uu,MyWeight)                        ;
        eta_Zuu_is3muon    ->Fill(eta_Z_uu,MyWeight)                       ;       
-       
-       tbz_w_cand = tbz_mu + tbz_met_mu                          ;
+       tbz_w_cand = tbz_mu + tbz_met_mu                                   ;
        w_pt_is3muon->Fill(tbz_w_cand.Pt(),MyWeight)                       ;
-                                                                 
-       //       w_mT_is3muon->Fill( tbz_w_cand.Mt()  )           ;
         if( mWT2 > 0.) w_mT_is3muon->Fill( mWT2 ,MyWeight)                ;
-
-       cout<<"###############mWT1(3muons) :  "<< mWT2 <<"   again : "<< tbz_w_cand.Mt() <<endl;  
+       cout<<"###############mWT1(3muons) :  "<< mWT2 <<"   again : "<< tbz_w_cand.Mt() <<endl; 
   
       if(tbz_w_cand.M()> 0.)
-       w_m_is3muon->Fill(tbz_w_cand.M(),MyWeight)                                  ;
+       w_m_is3muon->Fill(tbz_w_cand.M(),MyWeight)                         ;
        TLorentzVector corr_top_is3muon                                    ;
        TLorentzVector corr_b_is3muon                                      ;
        double diff_is3muon = 1000.                                        ;
@@ -1283,16 +1246,15 @@ if(doPileup_)
          for(unsigned i=0; i< vec_bjet.size();i++)                        
          {                                                                
             double wdphi = tbz_w_cand.DeltaPhi(vec_bjet.at(i))            ;
-            wb_angle_is3muon->Fill(wdphi,MyWeight)                                 ;
+            wb_angle_is3muon->Fill(wdphi,MyWeight)                        ;
             if(wdphi > 1.)                                                
             tbz_top_is3muon = tbz_w_cand+vec_bjet.at(i)                   ;
-            //w_mT->Fill( tbz_w_cand.Mt())                                ;
             if(tbz_top_is3muon.Mt() > 0.)                                 
-            top_mT_is3muon->Fill( tbz_top_is3muon.Mt(),MyWeight)                   ;
+            top_mT_is3muon->Fill( tbz_top_is3muon.Mt(),MyWeight)          ;
             if(tbz_top_is3muon.M() > 0.)                                  
-            top_m_is3muon->Fill(tbz_top_is3muon.M(),MyWeight)                      ;
+            top_m_is3muon->Fill(tbz_top_is3muon.M(),MyWeight)             ;
             if(tbz_top_is3muon.Pt() > 0.)                                 
-            top_pt_is3muon->Fill(tbz_top_is3muon.Pt(),MyWeight)                    ;
+            top_pt_is3muon->Fill(tbz_top_is3muon.Pt(),MyWeight)           ;
             
             if( fabs(tbz_top_is3muon.M()-173.) < diff_is3muon  )
             {
@@ -1308,14 +1270,7 @@ if(doPileup_)
          w_b_angle_2nd_is3muon->Fill(tbz_w_cand.DeltaPhi(corr_b_is3muon),MyWeight) ;         
       }
       //============is3muon END ====================================
-      
-      // if( nbtagjets == 1 && metPtCut_ && jets->size()> 1 && is2muon1elec ) e_mWT1 > 0. isW_e isWe_New e_mWT2
-      
-       //Without MET CUT
       if(nmuons == 2 && nelectrns == 1 && is2muon && isWe_New &&  MOUN_ZMM > 0. && e_mWT2 > 0. && MOUN_ZMM>= MinZMAss_ && MOUN_ZMM < MaxZMass_ )
-      
-       //With MET CUT      
-      // if(nmuons == 2 && nelectrns == 1 && is2muon &&  isW_e && MOUN_ZMM >0. && e_mWT1 > 0.  /*is2muon1elec*/ )
       {     
           m_muonCutFlow     ->Fill(5) ; // Events after nmuons == 2 && nelectrns == 1 && is2muon && isWe_New &&  MOUN_ZMM > 0. && e_mWT2 > 0. cut
            // ---- 170814------
@@ -1349,44 +1304,37 @@ if(doPileup_)
           ElecPt_is2muon1elec   ->Fill(ElecPt,MyWeight)                         ;
           //Cutflow_AllComb->Fill(2)                                     ;
           jets_multi_is2muon1elec     ->Fill(njets,MyWeight)                    ;
-          LeadingJets_pt_is2muon1elec ->Fill(pt_jets,MyWeight)                  ;
+          
+
+          // Leading jets 
+          for(unsigned int k = 0; k < LeadngJetVec.size(); k++)
+          {
+          double LJetPt_is2muon1elec = LeadngJetVec.at(k).Pt()                  ;
+           LeadingJets_pt_is2muon1elec ->Fill(LJetPt_is2muon1elec,MyWeight)     ;
+          }
+          
           Pt_Welectrons_is2muon1elec  ->Fill(Pt_Welectrons,MyWeight)            ;
-                                                                       
-          // double met_pt_is2muon1elec  = 0.                          ;
-          // met_pt_is2muon1elec         = met->pt()                   ;
-          // met_pt_is2muon1elec_H1      ->Fill(met_pt_is2muon1elec)   ;
           met_pt_is2muon1elec_H1      ->Fill( met->pt() ,MyWeight)              ;
-         
-          // if( MOUN_ZMM>= MinZMAss_ && MOUN_ZMM < MaxZMass_ )  
-      //    if(desc < BtagDiscrCut_)
-        //  {
-     //     inv_Z_mass_is2muon1elec_Backgrnd->Fill(MOUN_ZMM,MyWeight)             ;
-       //   }
-	   if(nbtagjets == 0)
+  
+         if(nbtagjets == 0)
            {
            inv_Z_mass_is2muon1elec_Backgrnd_0bjet ->Fill(MOUN_ZMM,MyWeight);
            }
 
           inv_Z_mass_is2muon1elec ->Fill(MOUN_ZMM,MyWeight)                     ;
           pT_Z_is2muon1elec       ->Fill(pT_Z_uu,MyWeight)                      ;
-          eta_Zee_is2muon1elec    ->Fill(eta_Z_uu,MyWeight)                     ;
-                                                                       
-	                                                                    
-                                                                       
-         tbz_wenu_cand = tbz_el + tbz_met_elec                         ;         
-         wenu_pt_is2muon1elec->Fill(tbz_wenu_cand.Pt(),MyWeight)                ;
-                                                                       
-         if(e_mWT2 > 0.) wenu_mT_is2muon1elec->Fill(e_mWT2,MyWeight)            ;
-         
+          eta_Zee_is2muon1elec    ->Fill(eta_Z_uu,MyWeight)                     ;                                                            
+         tbz_wenu_cand = tbz_el + tbz_met_elec                                  ;         
+         wenu_pt_is2muon1elec->Fill(tbz_wenu_cand.Pt(),MyWeight)                ;                                                                       
+         if(e_mWT2 > 0.) wenu_mT_is2muon1elec->Fill(e_mWT2,MyWeight)            ;         
          cout<<"###############e_mWT(2muon1elec) :  "<< e_mWT2 <<"   again : "<<tbz_wenu_cand.Mt() <<endl;  
-   
+         
          if(tbz_wenu_cand.M() > 1.)
-         wenu_m_is2muon1elec->Fill( tbz_wenu_cand.M(),MyWeight)                       ;                                                                              
+         wenu_m_is2muon1elec->Fill( tbz_wenu_cand.M(),MyWeight)              ;                                                                              
          TLorentzVector e_corr_top_is2muon1elec                              ;
          TLorentzVector e_corr_b_is2muon1elec                                ;
          
-         double diff_is2muon1elec = 1000.                                    ;
-            
+         double diff_is2muon1elec = 1000.                                    ;            
          for(unsigned i=0; i< vec_bjet.size();i++)
          {
             double wb_dphi = tbz_wenu_cand.DeltaPhi(vec_bjet.at(i))          ;
@@ -1414,14 +1362,7 @@ if(doPileup_)
          wb_angle_2nd_is2muon1elec->Fill(tbz_wenu_cand.DeltaPhi(e_corr_b_is2muon1elec),MyWeight)   ;          
       }      
       //=========is2muon1elec END ==================================
-
-      
-      // if(nbtagjets == 1 && metPtCut_ && jets->size()> 1 && is2elec1muon) isW=true  if( mWT1 > 0.) isW_New
-      //Without MET CUT
       if(nmuons == 1 && nelectrns == 2 && is2elec && isW_New && ELECCTRON_MSS > 0. && mWT2 > 0. && ELECCTRON_MSS >= MinZMAss_ && ELECCTRON_MSS < MaxZMass_ )
-      
-      //With MET CUT      
-      // if(nmuons == 1 && nelectrns == 2 && is2elec && isW &&  ELECCTRON_MSS >0. && mWT1 > 0. /*is2elec1muon*/)
       {
        m_muonCutFlow     ->Fill(6) ;  // Events after nmuons == 1 && nelectrns == 2 && is2elec && isW_New && ELECCTRON_MSS > 0. && mWT2 > 0. cut
       
@@ -1454,22 +1395,21 @@ if(doPileup_)
           
        MuonsPt_is1muon2elec ->Fill(MuonsPt,MyWeight)                            ;
        ElecPt_is1muon2elec  ->Fill(ElecPt,MyWeight)                             ;       
-       //Cutflow_AllComb->Fill(3)                                                 ;
        jets_multi_is2elec1muon     ->Fill(njets,MyWeight)                       ;
-       LeadingJets_pt_is2elec1muon ->Fill(pt_jets,MyWeight)                     ;
-       Pt_Wmuons_is2elec1muon      ->Fill(Pt_Wmuons,MyWeight)                   ;
-                                                                       
-       // double met_pt_is2elec1muon = 0.                              ;
-       // met_pt_is2elec1muon        = met->pt()                       ;
-       // met_pt_is2elec1muon_H1     ->Fill(met_pt_is2elec1muon)       ;
        
-       met_pt_is2elec1muon_H1     ->Fill(met->pt() ,MyWeight )                   ;
+         // Leading jets 
+          for(unsigned int k = 0; k < LeadngJetVec.size(); k++)
+          {
+          double LJetPt_is2elec1muon = LeadngJetVec.at(k).Pt()                  ;
+          LeadingJets_pt_is2elec1muon ->Fill(LJetPt_is2elec1muon,MyWeight)      ;
+          }
+       
+       Pt_Wmuons_is2elec1muon      ->Fill(Pt_Wmuons,MyWeight)                   ;
+       met_pt_is2elec1muon_H1     ->Fill(met->pt() ,MyWeight )                  ;
        if(nbtagjets == 0)
            {
            inv_Z_mass_is2elec1muon_Backgrnd_0bjet ->Fill(ELECCTRON_MSS,MyWeight);
-           }
-           
-        // if(ELECCTRON_MSS >= MinZMAss_ && ELECCTRON_MSS < MaxZMass_ )                  
+           }              
        inv_Z_mass_is2elec1muon ->Fill(ELECCTRON_MSS,MyWeight)          ;
        pT_Z_is2elec1muon       ->Fill(pT_Z_ee,MyWeight)                ;
        eta_Zee_is2elec1muon    ->Fill(eta_Z_ee,MyWeight)               ;       
@@ -1477,7 +1417,6 @@ if(doPileup_)
        w_mT_is2elec1muon->Fill(mWT2,MyWeight)             
              ;        
        tbz_w_is2elec1muon = tbz_mu + tbz_met_mu                        ;
-       //w_mT_is2elec1muon->Fill(tbz_w_is2elec1muon.Mt())              ;
        w_pt_is2elec1muon->Fill(tbz_w_is2elec1muon.Pt(),MyWeight)       ;       
        if(tbz_w_is2elec1muon.M()> 1.)
        w_m_is2elec1muon->Fill(tbz_w_is2elec1muon.M(),MyWeight)         ;       
@@ -1489,8 +1428,7 @@ if(doPileup_)
             double wdphi = tbz_w_is2elec1muon.DeltaPhi(vec_bjet.at(i))                 ;
             wb_angle_is2elec1muon->Fill(wdphi,MyWeight)                                ;
             if(wdphi > 1.)                                                             
-            tbz_top_is2elec1muon = tbz_w_is2elec1muon + vec_bjet.at(i)                 ;
-            //w_mT->Fill( tbz_w_cand.Mt())                           ;        
+            tbz_top_is2elec1muon = tbz_w_is2elec1muon + vec_bjet.at(i)                 ;    
             if(tbz_top_is2elec1muon.Mt() > 0.)                                
             top_mT_is2elec1muon->Fill( tbz_top_is2elec1muon.Mt(),MyWeight)             ;
             if(tbz_top_is2elec1muon.M() > 0.)                                 
@@ -1510,11 +1448,10 @@ if(doPileup_)
          if(corr_top_is2elec1muon.M() > 0.)                                                   
          top_m_2nd_is2elec1muon->Fill(corr_top_is2elec1muon.M(),MyWeight)                              ;
          w_b_angle_2nd_is2elec1muon->Fill(tbz_w_is2elec1muon.DeltaPhi(corr_b_is2elec1muon),MyWeight)   ;              
-      } 
-   
-   
-   
+      }    
     //=========is2elec1muon END ==================================
+    
+    
 
     //#############################################################
     //#          FINAL COMBINATIONS                               #  
@@ -1527,49 +1464,37 @@ if(doPileup_)
     cout<<"nMuons before final: "<<nmuons<<endl               ;
     cout<<"nElectrons before final"<< nelectrns<<endl         ;
     
-    //========================  is3elec-Final      ================       
-       // if(nbtagjets == 1 && metPtCut_ && jets->size()> 1 && is3elec ) ;  e_mWT1 > 0. isW_e isWe_New e_mWT2
-       
-       //Without MET CUT
-       // if( nelectrns == 3 && is2elec && isWe_New && nmuons ==0  &&  ELECCTRON_MSS > 0. && e_mWT2 > 0. && nbtagjets == 1 && njets > 1 )
-      
-      
-       //With MET CUT
-       // if(nelectrns == 3 && is2elec && isW_e && nmuons ==0  &&  ELECCTRON_MSS >0. && e_mWT1 > 0. )
+    
+    //========================  is3elec-Final      ================ 
+    
        if( nelectrns == 3 && is2elec && isWe_New && nmuons ==0  &&  ELECCTRON_MSS > 0. && e_mWT2 > 0. && nbtagjets >= 1 && njets >= 1 &&  metPtCut_ && ELECCTRON_MSS >= MinZMAss_ && ELECCTRON_MSS < MaxZMass_)
        { 
           m_muonCutFlow     ->Fill(7) ;  // Events after nelectrns == 3 && is2elec && isWe_New && nmuons ==0  &&  ELECCTRON_MSS > 0. && e_mWT2 > 0. && nbtagjets >= 1 && MET-Cut
           ElecPt_is3elec_Final         ->Fill(ElecPt,MyWeight)                 ;             
           jets_multi_is3elec_Final     ->Fill(njets,MyWeight)                  ;
-          LeadingJets_pt_is3elec_Final ->Fill(pt_jets,MyWeight)                ;
+          
+           
+         // Leading jets 
+          for(unsigned int k = 0; k < LeadngJetVec.size(); k++)
+          {
+          double LJetPt_is3elecF = LeadngJetVec.at(k).Pt()                     ;
+          LeadingJets_pt_is3elec_Final ->Fill(LJetPt_is3elecF,MyWeight)        ;
+          }   
+          
           Pt_Welectrons_is3elec_Final  ->Fill(Pt_Welectrons,MyWeight)          ;
-                                                                      
-          // double met_pt_is3elec  = 0.                              ;
-          // met_pt_is3elec         = met->pt()                       ;
-          // met_pt_is3elec_H1      ->Fill(met_pt_is3elec)            ;
           met_pt_is3elec_Final      ->Fill(met->pt(),MyWeight)                 ;
-         
-         // if(ELECCTRON_MSS >= MinZMAss_ && ELECCTRON_MSS < MaxZMass_ ) 
-         
-            // {
-            // inv_Z_mass_is3elec_Final ->Fill(ELECCTRON_MSS)               ;
-            // }
-            inv_Z_mass_is3elec_Final ->Fill(ELECCTRON_MSS,MyWeight)               ;
-            
-         pT_Z_is3elec_Final       ->Fill(pT_Z_ee,MyWeight)                     ;
-         eta_Zee_is3elec_Final    ->Fill(eta_Z_ee,MyWeight)                    ;                                                                      
-         tbz_wenu_cand = tbz_el+tbz_met_elec                          ;                                                                      
-         wenu_pt_is3elec_Final->Fill(tbz_wenu_cand.Pt(),MyWeight)              ; 
-         
-         if(tbz_wenu_cand.M() > 1.)       
-
-	   //wenu_mT_is3elec->Fill( tbz_wenu_cand.Mt() )                   ;        
-         if(e_mWT2 > 0.)  wenu_mT_is3elec_Final->Fill(e_mWT2 ,MyWeight )        ;
-                                                                      
+          inv_Z_mass_is3elec_Final ->Fill(ELECCTRON_MSS,MyWeight)              ;            
+          pT_Z_is3elec_Final       ->Fill(pT_Z_ee,MyWeight)                    ;
+          eta_Zee_is3elec_Final    ->Fill(eta_Z_ee,MyWeight)                   ;                                                                      
+          tbz_wenu_cand = tbz_el+tbz_met_elec                                  ;                                                                      
+          wenu_pt_is3elec_Final->Fill(tbz_wenu_cand.Pt(),MyWeight)             ; 
+         if(tbz_wenu_cand.M() > 1.)            
+         if(e_mWT2 > 0.)  wenu_mT_is3elec_Final->Fill(e_mWT2 ,MyWeight )       ;                                                                      
          wenu_m_is3elec_Final->Fill( tbz_wenu_cand.M(),MyWeight)               ;  
                                                                       
-         TLorentzVector e_corr_top_is3elec                            ;
-         TLorentzVector e_corr_b_is3elec                              ;                                                                         
+         TLorentzVector e_corr_top_is3elec                                     ;
+         TLorentzVector e_corr_b_is3elec                                       ;
+         
          double diff_is3elec = 1000.                                  ;         
          for(unsigned i=0; i< vec_bjet.size();i++)                    
          {                                                            
@@ -1597,44 +1522,33 @@ if(doPileup_)
          wb_angle_2nd_is3elec_Final ->Fill(tbz_wenu_cand.DeltaPhi(e_corr_b_is3elec),MyWeight)   ;        
                  
        }                     
-      // ======================= is3elec END =====================        
-    
-     // if(nbtagjets == 1 && metPtCut_ && jets->size()> 1 && is3muon ) isW=true  if( mWT1 > 0.) isW_New mWT2
+      // ======================= is3elec END =====================
       
-      //Without MET CUT
-      // if(nmuons == 3 && is2muon && isW_New && nelectrns == 0 && MOUN_ZMM > 0. && mWT2 > 0. && nbtagjets == 1 && njets > 1)
-      //With MET CUT
-       // if(nmuons == 3 && is2muon && isW && nelectrns == 0 && MOUN_ZMM > 0. && mWT1 > 0. /*is3muon*/ )
       if(nmuons == 3 && is2muon && isW_New && nelectrns == 0 && MOUN_ZMM > 0. && mWT2 > 0. && nbtagjets >= 1 && njets >= 1 && metPtCut_ && MOUN_ZMM >= MinZMAss_ && MOUN_ZMM < MaxZMass_ )
       {
-      m_muonCutFlow     ->Fill(8) ; // Events after nmuons == 3 && is2muon && isW_New && nelectrns == 0 && MOUN_ZMM > 0. && mWT2 > 0. && nbtagjets >= 1 && MET Cut
+       m_muonCutFlow     ->Fill(8) ; // Events after nmuons == 3 && is2muon && isW_New && nelectrns == 0 && MOUN_ZMM > 0. && mWT2 > 0. && nbtagjets >= 1 && MET Cut
        MuonsPt_is3muon_Final        ->Fill(MuonsPt,MyWeight)             ;      
        jets_multi_is3muon_Final     ->Fill(njets,MyWeight)               ;
-       LeadingJets_pt_is3muon_Final ->Fill(pt_jets,MyWeight)             ;
-       Pt_Wmuons_is3muon_Final      ->Fill(Pt_Wmuons,MyWeight)           ;       
-       // double met_pt_is3muon  = 0.                           ;    
-       // met_pt_is3muon         = met->pt()                    ;
-       //met_pt_is3muon_H1      ->Fill(met_pt_is3muon)          ;
+        
+           // Leading jets 
+          for(unsigned int k = 0; k < LeadngJetVec.size(); k++)
+          {
+          double LJetPt_is3muonF = LeadngJetVec.at(k).Pt()               ;
+          LeadingJets_pt_is3muon_Final ->Fill(LJetPt_is3muonF,MyWeight)  ;
+          }   
+       
+       Pt_Wmuons_is3muon_Final      ->Fill(Pt_Wmuons,MyWeight)           ;
        met_pt_is3muon_Final      ->Fill(met->pt(),MyWeight )             ; 
-       
-       // if( MOUN_ZMM >= MinZMAss_ && MOUN_ZMM < MaxZMass_ ) 
-       // {       
-       // inv_Z_mass_is3muon_Final ->Fill(MOUN_ZMM)                ;
-       // }
        inv_Z_mass_is3muon_Final ->Fill(MOUN_ZMM,MyWeight)                ;
-       
        pT_Z_is3muon_Final       ->Fill(pT_Z_uu,MyWeight)                 ;
        eta_Zuu_is3muon_Final    ->Fill(eta_Z_uu,MyWeight)                ;       
-       tbz_w_cand = tbz_mu + tbz_met_mu                         ;
+       tbz_w_cand = tbz_mu + tbz_met_mu                                  ;
        w_pt_is3muon_Final->Fill(tbz_w_cand.Pt(),MyWeight)                ;
-       
-       //       w_mT_is3muon->Fill( tbz_w_cand.Mt()  )          ;
         if( mWT2 > 0.) w_mT_is3muon_Final->Fill( mWT2 ,MyWeight)         ;
-
        cout<<"###############mWT1(3muons) :  "<<mWT2 <<"   again : "<<tbz_w_cand.Mt() <<endl;  
   
       if(tbz_w_cand.M()> 0.)
-       w_m_is3muon_Final->Fill(tbz_w_cand.M(),MyWeight)                         ;
+       w_m_is3muon_Final->Fill(tbz_w_cand.M(),MyWeight)                ;
        TLorentzVector corr_top_is3muon                                 ;
        TLorentzVector corr_b_is3muon                                   ;
        double diff_is3muon = 1000.                                     ;
@@ -1642,17 +1556,15 @@ if(doPileup_)
          for(unsigned i=0; i< vec_bjet.size();i++)      
          {       
             double wdphi = tbz_w_cand.DeltaPhi(vec_bjet.at(i))         ;
-            wb_angle_is3muon_Final->Fill(wdphi,MyWeight)                        ;
+            wb_angle_is3muon_Final->Fill(wdphi,MyWeight)               ;
             if(wdphi > 1.)      
             tbz_top_is3muon = tbz_w_cand+vec_bjet.at(i)                ;
-            //w_mT->Fill( tbz_w_cand.Mt())                             ;
             if(tbz_top_is3muon.Mt() > 0.)
-            top_mT_is3muon_Final->Fill( tbz_top_is3muon.Mt(),MyWeight)          ;
+            top_mT_is3muon_Final->Fill( tbz_top_is3muon.Mt(),MyWeight) ;
             if(tbz_top_is3muon.M() > 0.)                               
-            top_m_is3muon_Final->Fill(tbz_top_is3muon.M(),MyWeight)             ;
+            top_m_is3muon_Final->Fill(tbz_top_is3muon.M(),MyWeight)    ;
             if(tbz_top_is3muon.Pt() > 0.)                              
-            top_pt_is3muon_Final->Fill(tbz_top_is3muon.Pt(),MyWeight)           ;
-            
+            top_pt_is3muon_Final->Fill(tbz_top_is3muon.Pt(),MyWeight)  ;            
             if( fabs(tbz_top_is3muon.M()-173.) < diff_is3muon  )
             {
             
@@ -1671,14 +1583,7 @@ if(doPileup_)
          
       }
       //============is3muon END ====================================
-      
-      // if( nbtagjets == 1 && metPtCut_ && jets->size()> 1 && is2muon1elec ) e_mWT1 > 0. isW_e isWe_New e_mWT2
-      
-       //Without MET CUT
-     // if(nmuons == 2 && nelectrns == 1 && is2muon && isWe_New && MOUN_ZMM >0. && e_mWT2 > 0. && nbtagjets == 1 && njets > 1)
-      
-       //With MET CUT      
-      // if(nmuons == 2 && nelectrns == 1 && is2muon &&  isW_e && MOUN_ZMM >0. && e_mWT1 > 0.  /*is2muon1elec*/ )
+ 
       if(nmuons == 2 && nelectrns == 1 && is2muon && isWe_New && MOUN_ZMM >0. && e_mWT2 > 0. && nbtagjets >= 1 && njets >= 1 &&  metPtCut_ && MOUN_ZMM>= MinZMAss_ && MOUN_ZMM < MaxZMass_ )
       
       {
@@ -1686,25 +1591,24 @@ if(doPileup_)
          MuonsPt_is2muon1elec_Final          ->Fill(MuonsPt,MyWeight)               ;
          ElecPt_is2muon1elec_Final           ->Fill(ElecPt,MyWeight)                ;
          jets_multi_is2muon1elec_Final       ->Fill(njets,MyWeight)                 ;
-         LeadingJets_pt_is2muon1elec_Final   ->Fill(pt_jets,MyWeight)               ;
-         Pt_Welectrons_is2muon1elec_Final    ->Fill(Pt_Welectrons,MyWeight)         ;
-                                                                           
-         // double met_pt_is2muon1elec  = 0.                               ;
-         // met_pt_is2muon1elec         = met->pt()                        ;
-         // met_pt_is2muon1elec_H1      ->Fill(met_pt_is2muon1elec)        ;
-         met_is2muon1elec_Final      ->Fill( met->pt() ,MyWeight)                   ;
-                                                                           
-         // if( MOUN_ZMM>= MinZMAss_ && MOUN_ZMM < MaxZMass_ )                
-         inv_ZM_is2mu1E_Final     ->Fill(MOUN_ZMM,MyWeight)                         ;
-         pT_Z_is2mu1E_Final       ->Fill(pT_Z_uu,MyWeight)                          ;
-         EtaZ_is2mu1E_Final       ->Fill(eta_Z_uu,MyWeight)                         ;
          
-         tbz_wenu_cand = tbz_el + tbz_met_elec                             ;
+          
+           // Leading jets 
+          for(unsigned int k = 0; k < LeadngJetVec.size(); k++)
+          {
+          double LJetPt_is3muonF = LeadngJetVec.at(k).Pt()               ;
+          LeadingJets_pt_is2muon1elec_Final   ->Fill(pt_jets,MyWeight)   ;
+          }   
+        
+        Pt_Welectrons_is2muon1elec_Final    ->Fill(Pt_Welectrons,MyWeight)         ;
+         met_is2muon1elec_Final      ->Fill( met->pt() ,MyWeight)                  ;             
+         inv_ZM_is2mu1E_Final     ->Fill(MOUN_ZMM,MyWeight)                        ;
+         pT_Z_is2mu1E_Final       ->Fill(pT_Z_uu,MyWeight)                         ;
+         EtaZ_is2mu1E_Final       ->Fill(eta_Z_uu,MyWeight)                        ;
          
-         W_pt_is2mu1E_Final  ->Fill(tbz_wenu_cand.Pt(),MyWeight)                    ;
-         
-         if(e_mWT2 > 0.) W_transM_is2mu1E_Final->Fill(e_mWT2,MyWeight)              ;
-         
+         tbz_wenu_cand = tbz_el + tbz_met_elec                                     ;         
+         W_pt_is2mu1E_Final  ->Fill(tbz_wenu_cand.Pt(),MyWeight)                   ;         
+         if(e_mWT2 > 0.) W_transM_is2mu1E_Final->Fill(e_mWT2,MyWeight)             ;         
          cout<<"###############e_mWT(2muon1elec) :  "<<e_mWT2 <<"   again : "<<tbz_wenu_cand.Mt() <<endl;  
    
          if(tbz_wenu_cand.M() > 1.)
@@ -1740,14 +1644,7 @@ if(doPileup_)
          t_invM_2nd_is2mu1E_Final->Fill(e_corr_top_is2muon1elec.M(),MyWeight)                          ;
          wb_angle_2nd_is2mu1E_Final->Fill(tbz_wenu_cand.DeltaPhi(e_corr_b_is2muon1elec),MyWeight)      ;          
       }      
-      //=========is2muon1elec END ==================================    
-    
-      // if(nbtagjets == 1 && metPtCut_ && jets->size()> 1 && is2elec1muon) isW=true  if( mWT1 > 0.) isW_New
-      //Without MET CUT
-     // if(nmuons == 1 && nelectrns == 2&& is2elec && isW_New && ELECCTRON_MSS > 0. && mWT2 > 0. && nbtagjets == 1 && njets > 1 )
-      
-      //With MET CUT      
-      // if(nmuons == 1 && nelectrns == 2 && is2elec && isW &&  ELECCTRON_MSS >0. && mWT1 > 0. /*is2elec1muon*/)
+      //=========is2muon1elec END ==================================
      if(nmuons == 1 && nelectrns == 2&& is2elec && isW_New && ELECCTRON_MSS > 0. && mWT2 > 0. && nbtagjets >= 1 && njets >= 1 && metPtCut_  && ELECCTRON_MSS >= MinZMAss_ && ELECCTRON_MSS < MaxZMass_)
       {
       
@@ -1755,33 +1652,32 @@ if(doPileup_)
        MuonsPt_is1muon2elec_Final        ->Fill(MuonsPt,MyWeight)              ;
        ElecPt_is1muon2elec_Final         ->Fill(ElecPt,MyWeight)               ;
        jets_multi_is2elec1muon_Final     ->Fill(njets,MyWeight)                ;
-       LeadingJets_pt_is2elec1muon_Final ->Fill(pt_jets,MyWeight)              ;
+       
+          
+           // Leading jets 
+          for(unsigned int k = 0; k < LeadngJetVec.size(); k++)
+          {
+          double LJetPt_is2e1muF = LeadngJetVec.at(k).Pt()                     ;
+          LeadingJets_pt_is2elec1muon_Final ->Fill(LJetPt_is2e1muF,MyWeight)   ;
+          }   
+          
+          
        Pt_Wmuons_is2elec1muon_Final      ->Fill(Pt_Wmuons,MyWeight)            ;
-                                                                      
-       // double met_pt_is2elec1muon = 0.                             ;
-       // met_pt_is2elec1muon        = met->pt()                      ;
-       // met_pt_is2elec1muon_H1     ->Fill(met_pt_is2elec1muon)      ;
-       met_pt_is2elec1muon_Final     ->Fill(met->pt() ,MyWeight)               ;
-                                                                      
-       // if(ELECCTRON_MSS >= MinZMAss_ && ELECCTRON_MSS < MaxZMass_ )                    
+       met_pt_is2elec1muon_Final     ->Fill(met->pt() ,MyWeight)               ;             
        inv_Z_mass_is2elec1muon_Final ->Fill(ELECCTRON_MSS,MyWeight)            ;
        pT_Z_is2elec1muon_Final       ->Fill(pT_Z_ee,MyWeight)                  ;
        eta_Zee_is2elec1muon_Final    ->Fill(eta_Z_ee,MyWeight)                 ;       
         if( mWT2 > 0.)
-       w_mT_is2elec1muon_Final->Fill(mWT2,MyWeight)                            ; 
-                                                                      
-       tbz_w_is2elec1muon = tbz_mu + tbz_met_mu                       ;
-       //w_mT_is2elec1muon->Fill(tbz_w_is2elec1muon.Mt())             ;
+       w_mT_is2elec1muon_Final->Fill(mWT2,MyWeight)                            ;                                                                      
+       tbz_w_is2elec1muon = tbz_mu + tbz_met_mu                                ;
        w_pt_is2elec1muon_Final->Fill(tbz_w_is2elec1muon.Pt(),MyWeight)         ;       
        if(tbz_w_is2elec1muon.M()> 1.)                                 
-       w_m_is2elec1muon_Final->Fill(tbz_w_is2elec1muon.M(),MyWeight)           ;
-                                                                      
-       TLorentzVector corr_top_is2elec1muon                           ;
-       TLorentzVector corr_b_is2elec1muon                             ;
+       w_m_is2elec1muon_Final->Fill(tbz_w_is2elec1muon.M(),MyWeight)           ;                                                                      
+       TLorentzVector corr_top_is2elec1muon                                    ;
+       TLorentzVector corr_b_is2elec1muon                                      ;
        
-       double diff_is2elec1muon = 1000.                               ;
-       
-         for(unsigned i=0; i< vec_bjet.size();i++)
+      double diff_is2elec1muon = 1000.                                          ;       
+      for(unsigned i=0; i< vec_bjet.size();i++)
          {
             double wdphi = tbz_w_is2elec1muon.DeltaPhi(vec_bjet.at(i))                            ;
             wb_angle_is2elec1muon_Final->Fill(wdphi,MyWeight)                                              ;
