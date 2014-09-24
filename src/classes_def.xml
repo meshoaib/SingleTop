@@ -1,0 +1,4 @@
+<lcgdict>
+ <class name="std::vector<reco::Muon>"/>
+ <class name="edm::Wrapper<std::vector<reco::Muon> >" persistent="false"/>
+</lcgdict>
