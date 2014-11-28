@@ -1,9 +1,11 @@
-//------------- 120914 --------------------------------------
+//------------- 120914 -------------------------------------------------
 #include "MyAnalysis/TbZ/interface/TbZTopAnalyzer.h"
+#include "MyAnalysis/TbZ/interface/MiniEvent.h"
+//----------------------------------------------------------------------
 #include "DataFormats/MuonReco/interface/Muon.h"
 #include "DataFormats/MuonReco/interface/MuonSelectors.h"
 #include "MyAnalysis/TbZ/interface/ElectronProducer.h"
-#include "MyAnalysis/TbZ/interface/standalone_LumiReWeighting.h"
+//#include "MyAnalysis/TbZ/interface/standalone_LumiReWeighting.h"
 #include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
 #include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
 //------250814---- -----------------------------------------------------
@@ -35,15 +37,26 @@ public:
 };
 
 // constructors and destructor
-TbZTopAnalyzer::TbZTopAnalyzer(const edm::ParameterSet& iConfig)                                                                  
+TbZTopAnalyzer::TbZTopAnalyzer(const edm::ParameterSet& iConfig):m_triggerCache(iConfig.getParameterSet("triggerConfiguration") )
+                                          ,m_triggerSelector( triggerExpression::parse( iConfig.getParameter<std::string>("MutriggerSelection") ) )    
+                                          ,m_triggerSelector1( triggerExpression::parse( iConfig.getParameter<std::string>("EtriggerSelection") ) )
+                                          ,m_triggerSelector2( triggerExpression::parse( iConfig.getParameter<std::string>("MuEGtriggerSelection") ) )
+   //    				          ,vertexSrc_(iConfig.getParameter<edm::InputTag>("vertexSrc"))	
+       				          
+//TbZTopAnalyzer::TbZTopAnalyzer(const edm::ParameterSet& iConfig)                                                                  
 {
+
    //now do what ever initialization is needed
-   metPtCut_           = iConfig.getParameter<double>("metPtCut")                 ;
-   BtagPtCut_          = iConfig.getParameter<double>("BtagPtCut")                ;
-   BtagEtaCut_         = iConfig.getParameter<double>("BtagEtaCut")               ;
-   BtagDiscrCut_       = iConfig.getParameter<double>("BtagDiscrCut")             ;
-   DPhi_ENue_          = iConfig.getParameter<double>("DPHiENue")                 ;
-   DPHi_MuNue_         = iConfig.getParameter<double>("DPHiMuNue")                ;
+   
+      metPtCut_           = iConfig.getParameter<double>("metPtCut")              ;
+   
+    BtagPtCut_          = iConfig.getParameter<double>("BtagPtCut")             ;
+    BtagEtaCut_         = iConfig.getParameter<double>("BtagEtaCut")            ;
+    
+   // BtagDiscrCut_       = iConfig.getParameter<double>("BtagDiscrCut")          ;
+   // DPhi_ENue_          = iConfig.getParameter<double>("DPHiENue")              ;
+   // DPHi_MuNue_         = iConfig.getParameter<double>("DPHiMuNue")             ;
+
    MaxZMass_           = iConfig.getParameter<double>("MaxZMass")                 ;
    MinZMAss_           = iConfig.getParameter<double>("MinZMAss")                 ;
    JetsPtCut_          = iConfig.getParameter<double>("JetsPtCut")                ;
@@ -56,19 +69,26 @@ TbZTopAnalyzer::TbZTopAnalyzer(const edm::ParameterSet& iConfig)
     primaryVertexInputTag_  = iConfig.getParameter<edm::InputTag>("primaryVertexInputTag")          ;
     vertexSrc_              = iConfig.getParameter<edm::InputTag>("vertexSrc")                      ;
    // -----
-    bJetProducer_ = iConfig.getParameter<edm::InputTag>("bJetProducer")                                   ;
+    bJetProducer_ = iConfig.getParameter<edm::InputTag>("bJetProducer")                             ;
+
 if( doPileup_)
-{
+	{
 
    LumiWeights_ = edm::LumiReWeighting(
                                        "SignalMC.root",
                                        "data250814.root",
                                        "topAna/TNPUTrue",
                                        "pileup");
-}
- }
+	}// pileup 
 
-//}
+// Read Fakerate histograms --- For calculating --------------------------
+//TFile *fr_file = TFile::Open("FR_histos.root","READ") ;
+//TH2D *FR_histo_ele = fr_file->Get("FR_histo_ele")     ;
+//TH2D *FR_histo_mu = fr_file->Get("FR_histo_mu")       ;
+//------------------------------------------------------------------------
+
+}//constructor ends here
+
 TbZTopAnalyzer::~TbZTopAnalyzer()
 
     {
@@ -81,6 +101,12 @@ TbZTopAnalyzer::~TbZTopAnalyzer()
 void
 TbZTopAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
+
+	//ev_.run     = iEvent.id().run()           ;
+	//tree_    ->Fill();
+	//ev_.lumi    = iEvent.luminosityBlock()    ;
+	//ev_.event   = iEvent.id().event()         ;
+	//tree_    ->Fill();
 
    //============= Gen particles loop ================================
      // Handle<GenParticleCollection> genParticle                          ;
@@ -96,60 +122,68 @@ TbZTopAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      m_muonCutFlow     ->Fill(0)            ;   // All Events
      
    //--- bool for combinations---------------
-   bool is3elec      = false    ;
-   bool is3muon      = false    ;
-   bool is2elec1muon = false    ;
-   bool is2muon1elec = false    ;
-   bool is2elec      = false    ;
-   bool is2muon      = false    ;
-   bool is1elec      = false    ;
-   bool is1muon      = false    ;
-   bool isW_e,isW    = false    ;
-   bool isW_New       = false   ; 
-   bool isWe_New      = false   ;
+   bool is3elec      = false      ;
+   bool is3muon      = false      ;
+   bool is2elec1muon = false      ;
+   bool is2muon1elec = false      ;
+   bool is2elec      = false      ;
+   bool is2muon      = false      ;
+   bool is1elec      = false      ;
+   bool is1muon      = false      ;
+   bool isW_e,isW    = false      ;
+   bool isW_New      = false      ; 
+   bool isWe_New     = false      ;
    //--------------------------
-   double dphi       = 1000 ;  double e_dphi = 1000; double dphi1    = 1000  ; 
-   double count2elec = 0.   ;  double var0   =  0. ; double e_dphi1  = 1000  ;                            
-   int    n_muons    = 0.   ;  unsigned int nele = 0   ;   
-   double nelec  =  0  ;
+   double dphi       = 1000       ;  double e_dphi     = 1000  ; double       dphi1     = 1000  ; 
+   double count2elec = 0.         ;  double var0       =  0.   ; double       e_dphi1   = 1000  ;                            
+   int    n_muons    = 0.         ;  unsigned int nele =  0    ; unsigned int neleNoIso = 0; double nelec      = 0.   ;
    
-   double nelectrns       = 0.    ;
-   double nmuons          = 0.    ;
-   double nleptons        = 0.    ;
-   double pt_jets         = 0.    ;
-   double Pt_Wmuons       = 0.    ;
-   double MuonsPt         = 0.    ;
-   double ElecPt          = 0.    ;
-   double Pt_Welectrons   = 0.    ; 
-  double PFJetNHEF ,PFJetCHEF,PFJetNEMF,PFJetCEMF,NeutralHadIso,photonIso ;   
-  // double desc  = 0                                                       ;
-   
-   
-   double ST_Variable         ;
-   double MetPt         = 0.  ;
-   double trackIso      = 0.  ;
-   int nbtagjets        = 0   ;   
-   double NEvents       = 0   ;
-   //----1409
-   double NonJet_Pt = 0. ;
-   
-   double SumpT_is1mu2e  = 0.;
-   //--130914--
-   //std::vector< TLorentzVector > vec_bjet     ;
-   std::vector<TLorentzVector>  nonbjetcontainer ;
+   double nelectrns       = 0.    ;   double nmuons          = 0.    ;
+   double nElecZeroIso    = 0.    ;   double nleptons        = 0.    ; 
+   double nleptonsZeroIso = 0.    ;
 
-   NEvents++                           ;
-   H1_NEvents        ->Fill( NEvents)  ;
+   double nMuonsNoIso     = 0.    ;   double pt_jets         = 0.    ;
+   double Pt_Wmuons       = 0.    ;   double MuonsPt         = 0.    ;
+   double ElecPt          = 0.    ;   double Pt_Welectrons   = 0.    ; 
+
+   double PFJetNHEF ,PFJetCHEF,PFJetNEMF,PFJetCEMF,NeutralHadIso,photonIso ;   
+  // double desc  = 0                                                      ;
+   
+   
+   double ST_Variable           ;
+   double MetPt          = 0.   ;
+   double trackIso       = 0.   ;
+   int nbtagjets         = 0    ;   
+   cout<<""<<nbtagjets<<endl    ;
+   double NEvents        = 0    ;
+   //----1409
+   double NonJet_Pt      = 0.   ;
+   
+   double SumpT_is1mu2e  = 0.   ;
+
+   //----- fake combinatons---
+   	//bool  NonIsoElec =  false    ;
+   	//bool  NonIsoMu   =  false    ;	
+   //-------------------------
+
+
+   //--130914--
+   //std::vector< TLorentzVector > vec_bjet        ;
+   std::vector<TLorentzVector>  nonbjetcontainer   ;
+
+   NEvents++                                       ;
+   H1_NEvents        ->Fill( NEvents)              ;
    
    // --flag for pileup ----
-   float npT=-1.   ;
-   float npIT=-1.  ;
+
+   float npT=-1.                                   ;
+   float npIT=-1.                                  ;
 
 if( doPileup_)
 {
-	edm::Handle<std::vector< PileupSummaryInfo > >  PupInfo;
-	iEvent.getByLabel(edm::InputTag("addPileupInfo"), PupInfo);
-	std::vector<PileupSummaryInfo>::const_iterator PVI;
+	edm::Handle<std::vector< PileupSummaryInfo > >  PupInfo      ;
+	iEvent.getByLabel(edm::InputTag("addPileupInfo"), PupInfo)   ;
+	std::vector<PileupSummaryInfo>::const_iterator PVI           ;
 
 //	float npT=-1.;
 //	float npIT=-1.;
@@ -164,49 +198,102 @@ if( doPileup_)
 } //---end of flag for pileup ---------
 
 // double MyWeight = LumiWeights_.weight( npT );
-double MyWeight = 1; 
+double MyWeight = 1                       ; 
 if(doPileup_)
 {
- TNPUTrue_->Fill(npT);
- TNPUInTime_->Fill(npIT);
+ TNPUTrue_->Fill(npT)                     ;
+ TNPUInTime_->Fill(npIT)                  ;
 
-  WeightVsNint_->Fill(npT,MyWeight);
-  WGT_->Fill(MyWeight);
-  RWTTrue_->Fill(npT, MyWeight);
-  RWTInTime_->Fill(npIT, MyWeight);
- //TNVTX_->Fill(float(NVtx)-1, MyWeight); 
+  WeightVsNint_->Fill(npT,MyWeight)       ;
+  WGT_->Fill(MyWeight)                    ;
+  RWTTrue_->Fill(npT, MyWeight)           ;
+  RWTInTime_->Fill(npIT, MyWeight)        ;
+ //TNVTX_->Fill(float(NVtx)-1, MyWeight)  ; 
 }
 
- edm::Handle< std::vector<reco::Vertex> > vertices_h;
-  iEvent.getByLabel(vertexSrc_, vertices_h);
-  if (!vertices_h.isValid()) {
+  edm::Handle< std::vector<reco::Vertex> > vertices_h   ;
+  iEvent.getByLabel(vertexSrc_, vertices_h)             ;
+
+  if (!vertices_h.isValid()) 
+	{
     std::cout<<"Didja hear the one about the empty vertex collection?\n";
     return;
-  }
+       }
+ 
   // require in the event that there is at least one reconstructed vertex
   if(vertices_h->size()<=0) return;
-  // pick the first (i.e. highest sum pt) vertex
-  const reco::Vertex* theVertex=&(vertices_h->front());
-  // require that the vertex meets certain criteria
-  if(theVertex->ndof()<5) return;
-  if(fabs(theVertex->z())>24.0) return;
-  if(fabs(theVertex->position().rho())>2.0) return;
 
-  std::vector<reco::Vertex>::const_iterator itv;
-  int NVtx = 0;
+  // -------- TTree---------------	
+  ev_.nvtx=vertices_h->size()    ;
+  // ------------------------------
+
+  // pick the first (i.e. highest sum pt) vertex
+  const reco::Vertex* theVertex=&(vertices_h->front()) ;
+  // require that the vertex meets certain criteria
+  if(theVertex->ndof()<5) return                       ;
+  if(fabs(theVertex->z())>24.0) return                 ;
+  if(fabs(theVertex->position().rho())>2.0) return     ;
+
+  std::vector<reco::Vertex>::const_iterator itv        ;
+  int NVtx = 0                                         ;
+
   // now, count vertices
   for (itv = vertices_h->begin(); itv != vertices_h->end(); ++itv) {
     // require that the vertex meets certain criteria
-    if(itv->ndof()<5) continue;
-    if(fabs(itv->z())>50.0) continue;
-    if(fabs(itv->position().rho())>2.0) continue;
-    ++NVtx;
-  }
-  TNVTX_->Fill(float(NVtx), MyWeight);
 
- //  H1_NEvents ->Fill( NEvents)   ;
-   //m_muonCutFlow     ->Fill(1)            ; // Events after trigger.
+    if(itv->ndof()<5) continue                         ;
+    if(fabs(itv->z())>50.0) continue                   ;
+    if(fabs(itv->position().rho())>2.0) continue       ;
+    ++NVtx                                             ;
+
+  }
+
+  TNVTX_->Fill(float(NVtx), MyWeight)                  ;
+  //--------about Trigger ----------
+    bool tqZDoublEE     = false  ;
+    bool tqZDoublMu     = false  ;
+    bool tqZMuEG        = false  ;
+    
+     if (m_triggerSelector and m_triggerCache.setEvent(iEvent,iSetup))
+     {
+         // // if the L1 or HLT configurations have changed, (re)initialize the filters (including during the first event)
+         
+	 if (m_triggerCache.configurationUpdated()) 
+       {
+      m_triggerSelector ->init(m_triggerCache)            ;    
+      m_triggerSelector1 ->init(m_triggerCache)           ;
+      m_triggerSelector2 ->init(m_triggerCache)           ;
+       }      
+
+
+     tqZDoublEE = (*m_triggerSelector1)(m_triggerCache)        ;
+     tqZDoublMu = (*m_triggerSelector)(m_triggerCache)         ;
+     tqZMuEG    = (*m_triggerSelector2)(m_triggerCache)        ;  
+                                                                       
+     cout<< "trigger_Double_Electron: "<<tqZDoublEE<<endl      ;     
+     if( tqZDoublEE == 1) tqZDoublEE = true                    ; 
+     
+     cout<< "trigger_Double_muon: "    <<tqZDoublMu<<endl       ;
+     if(tqZDoublMu == 1 ) tqZDoublMu = true                     ;
+      
+    cout<< "trigger_MuEG"   <<tqZMuEG <<endl                    ;  
+    if( tqZMuEG == 1 ) tqZMuEG = true                           ;
+    
+     } // end of trigger
+
+//double NEvents = 0  ;
+
+ //-------------------------------------------------------------------------
+	if( tqZDoublMu == true && tqZDoublEE == false)
+//	if (tqZMuEG == true && tqZDoublMu == false && tqZDoublEE == false)
+	//if(tqZDoublEE == true && tqZDoublMu == false)	
+	{
+
+	NEvents++                                         ; 
+        H1_NEvents ->Fill( NEvents)                       ;
+        m_muonCutFlow     ->Fill(1)                       ; // Events after trigger.
    
+
    tbz::TbZUtility tbzHelper     ;
    
    TLorentzVector tbz_w_cand,tbz_wenu_cand,tbz_met,tbz_bjet,tbz_Quarkjet,tbz_mu,tbz_el,tbz_top,tbz_topE            (0,0,0,0) ;
@@ -217,40 +304,80 @@ if(doPileup_)
                   ,tbz_top_is2elec1muon,tbz_wenu_cand_is2muon1elec,tbz_w_is2elec1muon,tbz_wenu_cand2,tbz_w_cand2   (0,0,0,0) ;
    TLorentzVector truebQuark,tbz_trueTop,tbz_trueTopWu,truebQuark_Mu                                               (0,0,0,0) ;
    
-   std::vector< TLorentzVector > vec_bjet ;
-   std::vector< TLorentzVector > LeadngJetVec;
-   vec_bjet.clear()                       ; 
+   std::vector< TLorentzVector > vec_bjet         ;
+   std::vector< TLorentzVector > LeadngJetVec     ;
+   vec_bjet.clear()                               ; 
    
    //---22-07-14--- tight lepton --------------------------------------------
    
-   edm::Handle<std::vector<pat::Electron> > ElecPat     ;
-   iEvent.getByLabel("selectedPatElectrons", ElecPat)         ; //tightElectrons, selectedPatElectrons
-     
-    nelectrns = ElecPat->size()                         ;
-    cout<<"pat-tight-electrons"<<nelectrns<<endl        ;
-   vector<pat::Electron> m_preSel_Electrons             ; 
-   
+    edm::Handle<std::vector<pat::Electron> > ElecPat     ;
+   // iEvent.getByLabel("selectedPatElectrons", ElecPat)   ;      //selectedPatElectrons, tightElectrons tightElectronsZeroIso
+  // iEvent.getByLabel("tightElectronsZeroIso", ElecPat)   ;
+   iEvent.getByLabel("tightElectrons", ElecPat)   ; // now tight leptons are not working ... others are OK... see how tuples are being created
+ // iEvent.getByLabel("vetoElectrons", ElecPat)   ;//vetoElectrons
+
+
+   //---------------------------------
+    edm::Handle<std::vector<pat::Electron> >   ElecNoIso       ;
+    iEvent.getByLabel("tightElectronsZeroIso", ElecNoIso)      ;
+  //-----------------------------------
+    nElecZeroIso   = ElecNoIso->size()                         ;  
+    nelectrns      = ElecPat->size()                           ;
+ //---------------------------
+    cout<<"pat-tight-electrons"<<nelectrns<<endl               ;
+    cout<<"tight-Electrons-ZeroISo: "<<nElecZeroIso<<endl      ;
+    vector<pat::Electron> m_preSel_Electrons                   ;  
+
+   if(nelectrns > 0)
+	{
    H1_noOfElectrons->Fill(nelectrns)                    ;  
+	}
+
+
    //
    Handle<vector <pat::Muon> > muonColl                 ;
    iEvent.getByLabel("tightMuons", muonColl )           ;
    vector<pat::Muon> m_preSel_muon                      ;
-                                                        
-   cout<<"Muons_Size: " << muonColl->size() <<endl      ;
-                                                        
-   nmuons = muonColl->size()                            ;
-   
+
+   Handle<vector <pat::Muon> > muonNoIso                ;
+   iEvent.getByLabel("tightMuonsZeroIso", muonNoIso)    ;
+
+   // --------------------------------------------------
+	// ev_.l_charge  = muonColl->charge();
+        // ev_.l_pt      = muonColl->Pt();
+        // ev_.l_eta     = muonColl->Pta();
+       //  ev_.l_phi     = muonColl->phi();
+   // --------------------------------------------------
+
+  cout<<"Muons_Size: " << muonColl->size() <<endl       ;
+  //cout<<"Muons_size_NoIso: "<< muonNoIso->size()<<endl  ;	
+
+  nMuonsNoIso = muonNoIso->size()                       ;
+  cout<<"Muons_size_NoIso: "<<nMuonsNoIso<<endl         ;
+
+  nmuons      = muonColl->size()                        ;
+
+  if(nmuons > 0)
+	{ 
    H1_noOfMuon->Fill(nmuons)                            ; 
+	}
    
-   nleptons        =  nelectrns + nmuons                ;
+
+   nleptons          =  nelectrns + nmuons              ;
+   
+   nleptonsZeroIso   = nMuonsNoIso + nElecZeroIso       ;
+  
+  cout<<"nleptonsZeroIso: "<<nleptonsZeroIso <<endl     ;
    
    cout<<"tight_electrons: "<<nelectrns<<endl           ;
    cout<<"tight_muons: " << nmuons <<endl               ;
+
+
    if(nleptons > 0)                                     
    H1_noOfleptons  -> Fill(nleptons)                    ;
      
-     // if(nleptons < 3.) return                       ; 
-     cout<<"Number_Of_Leptons == "<<nleptons<<endl     ;   
+     // if(nleptons < 3.) return                        ; 
+   cout<<"Number_Of_Leptons == "<<nleptons<<endl        ;   
    //=========== VERTEX ==================================================
    
    Handle< std::vector<reco::Vertex> > NEWvertices                            ;
@@ -259,55 +386,67 @@ if(doPileup_)
    if (!NEWvertices.isValid()) return                                         ;       
    // require in the event that there is at least one reconstructed vertex
   if(NEWvertices->size()<=0) return                                           ;
-  //vector<reco::Vertex>::const_iterator itv                                    ;
-   int NVtx_old = 0                                                               ;
+  //vector<reco::Vertex>::const_iterator itv                                  ;
+   int NVtx_old = 0                                                           ;
    // now, count vertices
    for (itv = NEWvertices->begin(); itv != NEWvertices->end(); ++itv)
    {      
       if(itv->ndof()< 4)                   continue                           ;
       if(fabs(itv->z())> 24.0)             continue                           ;
       if(fabs(itv->position().rho())>2.0) continue                            ;      
-      ++NVtx_old                                                                  ;
+      ++NVtx_old                                                              ;
    }
 
-      //Number_PrimaryVertex->Fill(NVtx_old)                ;
-      Number_PrimaryVertex ->Fill(NVtx_old,MyWeight)      ;
+      //Number_PrimaryVertex->Fill(NVtx_old)                                  ;
+      Number_PrimaryVertex ->Fill(NVtx_old,MyWeight)                          ;
    
-      if(NVtx_old < 1) return                            ;
+      if(NVtx_old < 1) return                                                 ;
    
-   m_muonCutFlow     ->Fill(1)            ; // Events after primary vertex cut     
+      m_muonCutFlow     ->Fill(1)                                             ; // Events after primary vertex cut     
   
-   // 3 tight leptons 
-    if(nleptons == 3 && nleptons != 4 )   
+  //###############  3 tight leptons #####################################################
+
+  // if(nleptons == 2 && nleptons != 3 && nleptonsZeroIso == 1 && nleptonsZeroIso != 2 ) 
+  //if(nleptons == 2 && nleptonsZeroIso == 1 )
+  //if(nleptonsZeroIso == 3 )
+ //if((nleptonsZeroIso == 1) && (nleptons == 2))
+ if(nleptons == 3 && nleptons != 4 )
+// if(nleptons > 1 && nleptons < 4 && nleptonsZeroIso > 2)   // 25-11-14
    {
 
+	cout<<"Nleptons after cut: "<<nleptons<<endl;
 
     cout <<" Run ID " << iEvent.id().run()<<"\t"<<iEvent.luminosityBlock()<<"\t"<<iEvent.id().event()<<std::endl;
      
-    cout<< "Number_Of_Leptons_after_cut == " << nleptons <<endl         ;    
+    cout<< "Number_Of_Leptons_after_cut == " << nleptons <<endl      ;    
    
-    m_muonCutFlow     ->Fill(2)            ; // Events after 3 tight leptons cut
+    m_muonCutFlow     ->Fill(2)                                      ; // Events after 3 tight leptons cut
 
   //=========== MET ========================================== 
    
-   edm::Handle< edm::View<pat::MET> > metCollection             ;
-   iEvent.getByLabel("patMETs", metCollection)                  ;
+   edm::Handle< edm::View<pat::MET> > metCollection                  ;
+   //iEvent.getByLabel("patMETs", metCollection)                       ; //topMETsPF
+
+  iEvent.getByLabel("topMETsPF", metCollection)                        ;
    
-   if (!iEvent.getByLabel("patMETs",metCollection)) return      ;
-   int metCollectionSize = metCollection->size()                ;
+   if (!iEvent.getByLabel("patMETs",metCollection)) return           ;
+   int metCollectionSize = metCollection->size()                     ;
+
+   cout<<"metCollectionSize: " <<metCollectionSize <<endl            ;
+
    for (int i=0; i<metCollectionSize; i++)                         
    {                                                               
-      if(metCollectionSize<=0)continue                          ;     
+      if(metCollectionSize<=0)continue                               ;     
       if(metCollectionSize>= 1)                                    
       {                                                            
          // cout <<"there is met container inside TOP with size "     ;
          // cout << metCollectionSize<<endl                           ;                       
       }                                                            
    }                                                                                        
-   edm::Ptr<pat::MET> met( metCollection,0)                       ;
+   edm::Ptr<pat::MET> met( metCollection,0)                           ;
    //fill MET LorentzVector                                                                                                  
-   double nu_e=0.                                                  ;
-   MetPt = met->pt();
+   double nu_e=0.                                                     ;
+   MetPt = met->pt()                                                  ;
    if( met->pt()> metPtCut_)
    {
    
@@ -318,19 +457,32 @@ if(doPileup_)
    }
 //========== MET PART END======================================================
         
-      pat::ElectronCollection myelectron_new( ElecPat->begin(), ElecPat->end() )   ;
-      nele = myelectron_new.size()                                                 ;                                                          
-      cout<<"size  ############ : " << nele << "  2nd size : "<< nelectrns <<endl  ;
-      sort(myelectron_new.begin(), myelectron_new.end(), PtGreater())              ;
+      pat::ElectronCollection myelectron_new( ElecPat->begin(), ElecPat->end() )         ;
+      pat::ElectronCollection myelectron_NoIso( ElecNoIso->begin(), ElecNoIso->end() )   ;
+    
+      nele      = myelectron_new.size()                                                  ;                                                          
+      neleNoIso = myelectron_NoIso.size()                                                ; 
+    
+      cout<<"size  ############ : " << nele << "  2nd size : "<< nelectrns <<endl        ;
+      cout<<"Size_of_Non_Iso: " <<neleNoIso << endl                                      ;
+   
+       sort(myelectron_new.begin(), myelectron_new.end(), PtGreater())                    ;
+
    
        unsigned int JJ = 0                                       ;
       edm::Handle<std::vector<pat::Jet> >jets                    ;
-      iEvent.getByLabel("selectedPatJets", jets)                 ;     
-     cout<<"Size_jets_collection: "<<jets->size()<<endl          ;    
+      //iEvent.getByLabel("selectedPatJets", jets)               ; // when used this, there were many number of jets    
+      iEvent.getByLabel("topJetsPF", jets)                       ; // with this few number of jets.
+      cout<<"Size_jets_collection: "<<jets->size()<<endl         ;    
       JetCollection myJets(jets->begin(), jets->end())           ; 
-      JJ  = myJets.size()                                        ;
-      sort(myJets.begin(), myJets.end(), PtGreater())            ;
+     
+	 JJ  = myJets.size()                                        ;
+         cout<<"JJ: "<<JJ<<endl                                     ;
+     
+
+	 sort(myJets.begin(), myJets.end(), PtGreater())            ;
    
+
           double ee_dphi                = -100    ;
           double delta_Phi_jet_elec     = -100    ;
           double delta_Eta_jet_elec     = -100    ;
@@ -340,7 +492,7 @@ if(doPileup_)
           double elec_phi               = -100    ;
           double elec_phi1              = -100    ;          
           double elec_eta               = -100    ;
-          double elec_eta1               = -100    ;
+          double elec_eta1              = -100    ;
           double muon_eta               = -100    ;
           double jets_eta               = -100    ;
           double jets_phi               = -100    ;
@@ -355,42 +507,57 @@ if(doPileup_)
           double MuonIsolation4         = 0.      ;
           double ecalIso                = 0.      ;             
           double hcalIso                = 0.      ;
-          // double trackIso               = 0.      ;
+          // double trackIso            = 0.      ;
           double iso                    = 0.      ;
           double relIso                           ;
-          double pT_Z_ee               = 0.       ;
-          double pT_Z_uu               = 0.       ;
-          double e_mWT1                = 0.       ;
-          double mWT1                  = 0.       ;
-          double mWT2                  = 0.       ;
-          double e_mWT2              = 0.       ; 
-          double relIso_elec         =  0.      ; 
-          double MOUN_ZMM            = 0.       ;
+          double pT_Z_ee                = 0.      ;
+          double pT_Z_uu                = 0.      ;
+          double e_mWT1                 = 0.      ;
+          double mWT1                   = 0.      ;
+          double mWT2                   = 0.      ;
+          double e_mWT2                 = 0.      ; 
+          double relIso_elec            = 0.      ; 
+          double MOUN_ZMM               = 0.      ;
+      	  int    MuonIsolation5                   ;
+	  int    njets                  = 0       ;
    
-   int     MuonIsolation5                         ;
-   int     njets             = 0                  ;   
-   double eta_Z_ee = -100; double eta_Z_uu  = -1000.  ;   
-   bool   passLeadingJetPt     = false                ;
+
+	  double eta_Z_ee = -100; double eta_Z_uu  = -1000.  ;   
+	  bool   passLeadingJetPt     = false                ;
+
+	  //---02-11-14
+          double Pt_NonIsoElec   = 0.;
+	
    //------------------Number of Loose lepton ----
-   // int looseLept = 0.        ;
-   int nbtagjets   = 0                              ;
+
+   // int looseLept = 0.                              ;
+  // int nbtagjets   = 0                                ;
+
    
    for(JetCollection::const_iterator JetsProd =jets->begin(); JetsProd != jets->end(); ++JetsProd)
     {   
             cout<<"I am here a jet: "<<endl                                                          ;
             
             double    bTagTCHP  = JetsProd->bDiscriminator("trackCountingHighPurBJetTags")           ;
+		cout<<"bTagTCHP: "<<bTagTCHP<<endl;
             double    bTagCSV   = JetsProd->bDiscriminator("combinedSecondaryVertexBJetTags")        ;
+		cout<<"bTagCSV:"<<bTagCSV<<endl;
             double    bTagTCHE  = JetsProd->bDiscriminator("trackCountingHighEffBJetTags")           ;
+		cout<<"bTagTCHE: "<<bTagTCHE<<endl;
             double    bTagSSVHE = JetsProd->bDiscriminator("simpleSecondaryVertexHighEffBJetTags")   ;
+		cout<<"bTagSSVHE: "<<bTagSSVHE<<endl;
             double    bTagSSVHP = JetsProd->bDiscriminator("simpleSecondaryVertexHighPurBJetTags")   ;
+		cout<<"bTagSSVHP: "<<bTagSSVHP<<endl;
             double    bTagJBPB  = JetsProd->bDiscriminator("jetBProbabilityBJetTags")                ;
+		cout<<"bTagJBPB: "<<bTagJBPB<<endl;
             double    bTagJPB   = JetsProd->bDiscriminator("jetProbabilityBJetTags")                 ;
+		cout<<"bTagJPB: " <<bTagJPB<<endl;
             double    bTag      = JetsProd->bDiscriminator("trackCountingHighPurBJetTags")           ;
+		cout<<"bTag: "<<bTag<<endl;
             
             if(JetsProd->pt() < JetsPtCut_ )continue                                                 ;
-            cout<< "Jets Pt after cut: "<<JetsProd->pt()<<endl                                       ;
-            cout<<"jets eta before cut: "<<fabs(JetsProd->eta())<<endl                               ;
+         //   cout<< "Jets Pt after cut: "<<JetsProd->pt()<<endl                                     ;
+         //   cout<<"jets eta before cut: "<<fabs(JetsProd->eta())<<endl                             ;
            if( fabs(JetsProd->eta()) > JetsEtaCut_ )    continue                                     ;
                                                                                                      
             PFJetNHEF = JetsProd ->neutralHadronEnergyFraction()                                     ;
@@ -417,17 +584,30 @@ if(doPileup_)
        
         if(bTagCSV>0.679)
                         {
+                        
                         tbz_bjet.SetPxPyPzE( JetsProd->px(), JetsProd->py()
                                               , JetsProd->pz()
-                                              , JetsProd->energy() )      ;
-                                             
-                                             
-                                vec_bjet.push_back(tbz_bjet)                              ;
-                                cout<<"Size of bjet container: " <<vec_bjet.size()<<endl  ;
-                                double BJets_pt = tbz_bjet.Pt();
-                                cout<<"bjets pt: "<<BJets_pt <<endl;
-                                nbtagjets++                                               ;
-                                cout<<"new bjet size: "<<nbtagjets<<endl                  ;
+                                              , JetsProd->energy() )                       ;                                                                                           
+                                 cout<< "bTagCSV: "  <<bTagCSV <<endl                      ;                                                                            
+                                 double BJets_pt  = tbz_bjet.Pt()                          ;
+                                 double BJets_Eta = tbz_bjet.Eta()                         ;
+                                                                                           
+                                 cout<<"bjets_pt_beforeCut:  "<<BJets_pt <<endl            ;
+                                 cout<<"BJets_Eta_BeforeCut: "<<BJets_Eta<<endl            ;
+                                                                                           
+                                 if(BJets_pt < BtagPtCut_)            continue             ;
+                                 if(fabs(BJets_Eta) > BtagEtaCut_)    continue             ;
+                                                                                           
+                                 cout<<"bjets pt: "<<BJets_pt <<endl                       ;
+                                 cout<<"BJets_Eta: "<<BJets_Eta<<endl                      ;
+                                  
+                                 vec_bjet.push_back(tbz_bjet)                              ;
+                                 cout<<"Size of bjet container: " <<vec_bjet.size()<<endl  ;
+                                
+                                 // nbtagjets     = vec_bjet.size()                        ;
+                                 nbtagjets++                                               ;
+                                 cout<<"new bjet size: "<<nbtagjets<<endl                  ;
+                                
                         }
         else
                         {
@@ -435,9 +615,24 @@ if(doPileup_)
                         tbz_Quarkjet.SetPxPyPzE(JetsProd->px()
                                                 , JetsProd->py()
                                                 , JetsProd->pz()
-                                                , JetsProd->energy() )                             ;
-                                                                                                   
-                                                                                                   
+                                                , JetsProd->energy() )                        ;
+
+                          if(bTagCSV > 0.679)     continue                                    ;
+                          cout<<"bTagCSV_in_LightJets: "<< bTagCSV <<endl                     ;                                                                         
+                          if(PFJetNHEF > 0.90 )  continue                                     ;
+                          if(PFJetCHEF <= 0. )   continue                                     ;
+                          if(PFJetNEMF > 0.90 )  continue                                     ;
+                          if(PFJetCEMF > 0.99 )  continue                                     ;
+
+                         if(JetsProd->pt() < JetsPtCut_ )continue                             ;
+                         cout<< "Jets Pt after cut: "<<JetsProd->pt()<<endl                   ;
+                         cout<<"jets eta before cut: "<<fabs(JetsProd->eta())<<endl           ;
+                         if( fabs(JetsProd->eta()) > JetsEtaCut_ )    continue                ;
+
+
+
+
+                               
                               nonbjetcontainer.push_back(tbz_Quarkjet)                             ;
                               double Jets_pt = tbz_Quarkjet.Pt()                                   ;
                               cout<<"bjets pt: "<<Jets_pt <<endl                                   ;                              
@@ -471,12 +666,12 @@ if(doPileup_)
        {
        
        cout<<"Helloo loop over non-jet vectors"<<endl          ;
-       NonJet_Pt = nonbjetcontainer.at(k).Pt()          ;
+       NonJet_Pt = nonbjetcontainer.at(k).Pt()                 ;
        cout<<"Pt of Non-jets: "<<NonJet_Pt<<endl               ;
        
                                                     
       //===========================================================
-      // cout<<"Size  : "<<JetsProd->size()<<endl                          ;
+      // cout<<"Size  : "<<JetsProd->size()<<endl                       ;
       cout<<"Pt    : "<<setw(12)<<nonbjetcontainer.at(k).Pt()<<endl     ;
       cout<<"Eta   : "<<setw(12)<<nonbjetcontainer.at(k).Eta()<<endl    ;
       cout<<"Phi   : "<<setw(12)<<nonbjetcontainer.at(k).Phi()<<endl    ;
@@ -509,15 +704,19 @@ if(doPileup_)
             
             elec_eta1              =  myElectron->eta()                         ;
             elec_phi1              =  myElectron->phi()                         ;
-            H1_elec_eta           -> Fill( elec_eta1,MyWeight)                   ;
-            H1_elec_phi           -> Fill( elec_phi1,MyWeight)                   ;
-            delta_Eta_jet_elec    =  jets_eta-elec_eta                          ;
-            delta_Phi_jet_elec    =  jets_phi-elec_phi                          ;
-            
+            H1_elec_eta           -> Fill( elec_eta1,MyWeight)                  ;
+            H1_elec_phi           -> Fill( elec_phi1,MyWeight)                  ;
+            delta_Eta_jet_elec    =  jets_eta-elec_eta1                         ;
+	    cout<<"delta_Eta_jet_elec: "<<delta_Eta_jet_elec<<endl              ;
+
+            //delta_Phi_jet_elec    =  jets_phi-elec_phi                          ;
+	    delta_Phi_jet_elec    =  deltaPhi(jets_phi,elec_phi)                ;	           
+	    cout<<"delta_Phi_jet_elec: " <<delta_Phi_jet_elec<<endl;
+ 
             delta_R_jet_elec=sqrt(( delta_Eta_jet_elec)*(delta_Eta_jet_elec)
                                  +( delta_Phi_jet_elec)*(delta_Phi_jet_elec))   ;
                                  
-             if (delta_R_jet_elec >= 0.)                                         
+             if (delta_R_jet_elec > 0.)                                         
             H1_delta_R_jet_elec     -> Fill(delta_R_jet_elec,MyWeight)          ;  
             if(fabs( delta_Eta_jet_elec)<3.5)                                   
             H1_delta_Eta_jet_elec   -> Fill(delta_Eta_jet_elec,MyWeight)        ;
@@ -530,10 +729,20 @@ if(doPileup_)
          for(unsigned int mi=0;mi < muonColl->size(); ++mi)
          {
             edm::Ptr<pat::Muon> myMuon(muonColl,mi)                         ;
-            if(met->pt()< metPtCut_) continue                               ;
+
+
+   // --------------------------------------------------
+       //  ev_.l_charge  = myMuon->charge();
+       //  ev_.l_pt      = myMuon->pt();
+       //  ev_.l_eta     = myMuon->eta();
+       // ev_.l_phi     = myMuon->phi();
+	 //tree_    ->Fill();
+   // --------------------------------------------------
+
+            if(met->pt()< metPtCut_) continue                                   ;
             
-            const pat::Muon mu = *myMuon      ;
-            muon::isLooseMuon(mu)             ;
+            const pat::Muon mu = *myMuon                                        ;
+            muon::isLooseMuon(mu)                                               ;
             
             cout<<"Pt   : "<<setw(12)<<myMuon->pt()  <<setw(12)<<mi<<endl       ;
             cout<<"Eta  : "<<setw(12)<<myMuon->eta() <<setw(12)<<mi<<endl       ;
@@ -543,21 +752,22 @@ if(doPileup_)
             muon_phi=myMuon->phi()                                              ;
             
             delta_Eta_jet_muon=jets_eta-muon_eta                                ;
-            delta_Phi_jet_muon=jets_phi-muon_phi                                ;
+            //delta_Phi_jet_muon=jets_phi-muon_phi                                ;
+            delta_Phi_jet_muon= deltaPhi(jets_phi,muon_phi)                       ;
             H1_muon_eta          -> Fill( muon_eta,MyWeight)                             ;
             H1_muon_phi          -> Fill( muon_phi,MyWeight)                             ;
             delta_R_jet_muon    =sqrt(( delta_Eta_jet_muon)*(delta_Eta_jet_muon)
-                                 +( delta_Phi_jet_muon)*(delta_Phi_jet_muon))   ;
+                                 +( delta_Phi_jet_muon)*(delta_Phi_jet_muon))            ;
                                 
             H1_delta_Eta_jet_muon-> Fill(delta_Eta_jet_muon,MyWeight)                    ;
             H1_delta_Phi_jet_muon-> Fill(delta_Phi_jet_muon,MyWeight)                    ;
             H1_delta_R_jet_muon  -> Fill(  delta_R_jet_muon,MyWeight)                    ;
             
-            if(delta_R_jet_muon < 0.5) break                                    ;    
+            if(delta_R_jet_muon < 0.5) break                                             ;    
             
          }  
          
-         if(delta_R_jet_muon < 0.5)    continue                                 ;
+         if(delta_R_jet_muon < 0.5)    continue                                           ;
          
     
     }
@@ -572,7 +782,7 @@ if(doPileup_)
      bool passLeadingPt =   false                             ;
       edm::Handle<reco::BeamSpot> bsHandle                    ;
       iEvent.getByLabel("offlineBeamSpot", bsHandle)          ;
-      // const reco::BeamSpot &beamspot = *bsHandle.product()    ;
+      // const reco::BeamSpot &beamspot = *bsHandle.product() ;
       edm::Handle<reco::ConversionCollection> hConversions    ;
       iEvent.getByLabel("allConversions", hConversions)       ;
       
@@ -586,6 +796,7 @@ if(doPileup_)
         photonIso     =  myElectron -> pfIsolationVariables().photonIso              ;
         
         relIso_elec    = (var0 + NeutralHadIso + photonIso) /myElectron ->pt()       ;
+	cout<<"relIso_elec: " <<relIso_elec<<endl;
 
          if(met->pt()< metPtCut_) continue                                           ;
          
@@ -597,12 +808,12 @@ if(doPileup_)
          if(n_Elec == 2 && ElecPtCut_)      ThrdLeadingElec_Pt->Fill(myElectron->pt(),MyWeight) ;
          n_Elec ++                                                                              ;
          
-          //==============================================================================   
-         cout<<"Pt   : "<<setw(12)<<myElectron->pt()  <<setw(12)<<ni<<endl              ;
-         cout<<"Eta  : "<<setw(12)<<myElectron->eta() <<setw(12)<<ni<<endl              ;
-         cout<<"Phi  : "<<setw(12)<<myElectron->phi() <<setw(12)<<ni<<endl              ;         
-         cout<<"Electrons pT inside Analyzer:  "                                        ;
-         cout<<setw(12)<<myElectron->pt()<<setw(12)<<ni<<endl                           ;
+          //=============================================================================   
+         cout<<"Pt   : "<<setw(12)<<myElectron->pt()  <<setw(12)<<ni<<endl                ;
+         cout<<"Eta  : "<<setw(12)<<myElectron->eta() <<setw(12)<<ni<<endl                ;
+         cout<<"Phi  : "<<setw(12)<<myElectron->phi() <<setw(12)<<ni<<endl                ;         
+         cout<<"Electrons pT inside Analyzer:  "                                          ;
+         cout<<setw(12)<<myElectron->pt()<<setw(12)<<ni<<endl                             ;
          //==============================================================================
          
            Elec_pt_Sum += myElectron->pt()                                                ;
@@ -611,12 +822,13 @@ if(doPileup_)
            
            ElecPt = myElectron->pt()                                                      ;
            elect_pt->Fill( ElecPt,MyWeight)                                               ;
-           elec_eta =myElectron->eta()                                                   ;
+           elec_eta =myElectron->eta()                                                    ;
+	  cout<<"elec_eta: "<<elec_eta<<endl;
            elec_phi=myElectron->phi()                                                     ;
           
-         float  Electron_IsopT;
+           float  Electron_IsopT                                                          ;
            
-                 Electron_IsopT = myElectron-> dr03TkSumPt()                             ;
+           Electron_IsopT        = myElectron-> dr03TkSumPt()                             ;
            float Elec_EcalRechit = myElectron-> dr03EcalRecHitSumEt()                     ;
            float Elec_HcalSumEt1 = myElectron-> dr03HcalDepth1TowerSumEt()                ;
            float Elec_HcalSumEt2 = myElectron-> dr03HcalDepth2TowerSumEt()                ;
@@ -630,12 +842,12 @@ if(doPileup_)
            
           cout<<"Number of Electrons: "<<nelec<<endl                                      ; 
           
-          m_preSel_Electrons.push_back(ElecPat->at(ni))                                     ; 
+          m_preSel_Electrons.push_back(ElecPat->at(ni))                                   ; 
           
-          //==============================================================================
-          cout<<"retrieved preselected electrons with size INSIDE TOP Analyser";
-          cout<<ElecPat->size() <<" new size : "<< m_preSel_Electrons.size()<<endl;
-          //==============================================================================        
+          //=============================================================================
+          cout<<"retrieved preselected electrons with size INSIDE TOP Analyser"           ;
+          cout<<ElecPat->size() <<" new size : "<< m_preSel_Electrons.size()<<endl        ;
+          //=============================================================================        
          
   } // end of for-loop ......
   
@@ -646,34 +858,35 @@ if(doPileup_)
           tbzHelper.makeEPairs(m_preSel_Electrons, el_sfos_masses, minE_pairIndex, dielectron_cand ) ;            
           int elect_cont_size = m_preSel_Electrons.size()                                            ;
       
-          if ( dielectron_cand.size() )is2elec=true                                                  ;
+          //if ( dielectron_cand.size() )is2elec=true                                                  ;
       
       for(unsigned ee=0; ee< dielectron_cand.size(); ++ee)
       {
       
-         if(met->pt()< metPtCut_)   continue                                                      ;
+         if(met->pt()< metPtCut_)   continue                                                         ;
          
-         double Fisrt_Index_Phi = m_preSel_Electrons.at(minE_pairIndex.first).phi()               ;
-         double Second_Index_Phi = m_preSel_Electrons.at( minE_pairIndex.second).phi()            ;
-         //==================================================================================
-         cout<< "Firtst_phi:   "<< Fisrt_Index_Phi<<endl                                          ;
-         cout<< "Second_phi:    "<< Second_Index_Phi<<endl                                        ;
-         //==================================================================================
+         double Fisrt_Index_Phi = m_preSel_Electrons.at(minE_pairIndex.first).phi()                  ;
+         double Second_Index_Phi = m_preSel_Electrons.at( minE_pairIndex.second).phi()               ;
+         //===================================================================================
+         cout<< "Firtst_phi:   "<< Fisrt_Index_Phi<<endl                                             ;
+         cout<< "Second_phi:    "<< Second_Index_Phi<<endl                                           ;
+         //===================================================================================
          if(dielectron_cand.size() &&  minE_pairIndex.first<elect_cont_size
                                    &&  minE_pairIndex.second<elect_cont_size )
          {
-            ELECCTRON_MSS = dielectron_cand.at(ee).mass()        ;
-            if(ELECCTRON_MSS >= MinZMAss_ && ELECCTRON_MSS < MaxZMass_ )
-            inv_Z_mass_ee->Fill(ELECCTRON_MSS,MyWeight)                   ;
-            cout<<"ELECTRON Z----MASS: "<<ELECCTRON_MSS<<endl    ;
-            pT_Z_ee      = dielectron_cand.at(ee).pt()           ;
-            H1_pT_Zee    ->Fill(pT_Z_ee,MyWeight)                         ;
-            eta_Z_ee     = dielectron_cand.at(ee).eta()          ;                     
-            eta_Zee_H1   ->Fill(eta_Z_ee,MyWeight)                        ;
-            count2elec ++                                        ;
-         //========================================================================================   
-            cout <<"Twoelectron_counter: "<<count2elec<<endl                                      ;
-         //========================================================================================   
+            ELECCTRON_MSS = dielectron_cand.at(ee).mass()                                            ;
+          //  if(ELECCTRON_MSS >= MinZMAss_ && ELECCTRON_MSS < MaxZMass_ )
+            inv_Z_mass_ee->Fill(ELECCTRON_MSS,MyWeight)                                              ;
+            cout<<"ELECTRON Z----MASS: "<<ELECCTRON_MSS<<endl                                        ;
+            pT_Z_ee      = dielectron_cand.at(ee).pt()                                               ;
+            H1_pT_Zee    ->Fill(pT_Z_ee,MyWeight)                                                    ;
+            eta_Z_ee     = dielectron_cand.at(ee).eta()                                              ;                     
+            eta_Zee_H1   ->Fill(eta_Z_ee,MyWeight)                                                   ;
+	    if(ELECCTRON_MSS >= 60 && ELECCTRON_MSS < 120 ) is2elec=true                             ;
+            count2elec ++                                                                            ;
+         //===================================================================================   
+            cout <<"Twoelectron_counter: "<<count2elec<<endl                                         ;
+         //===================================================================================   
          }  //end of if-loop
         
      } // end of for-loop
@@ -683,9 +896,12 @@ if(doPileup_)
          &&  minE_pairIndex.first<elect_cont_size 
          &&  minE_pairIndex.second< elect_cont_size )         
        {
-          ee_dphi = m_preSel_Electrons.at(minE_pairIndex.first).phi()
-                                           - m_preSel_Electrons.at( minE_pairIndex.second).phi()  ;
+ 	  ee_dphi = deltaPhi (m_preSel_Electrons.at(minE_pairIndex.first).phi(),m_preSel_Electrons.at( minE_pairIndex.second).phi());	
+         // ee_dphi = m_preSel_Electrons.at(minE_pairIndex.first).phi()
+         //                                  - m_preSel_Electrons.at( minE_pairIndex.second).phi()  ;
+                                      
           z_ee_dphi->Fill(ee_dphi,MyWeight)                                                       ;
+
        }  //end if-loop
       
       MEzCalculator *Mez_e = new MEzCalculator()                                                  ;
@@ -693,12 +909,22 @@ if(doPileup_)
        truewElec1.Clear()                                                                         ;
        truewElec2.Clear()                                                                         ;
        if(!is2elec) is1elec = true                                                                ;
-   
-      for(unsigned int  mi=0;  mi< nele ; ++mi)
+     
+// --- loop over non-isolated electrons----------------------------------------------------
+
+	for(unsigned int k=0; k<neleNoIso; ++k)
+	  {	
+		edm::Ptr<pat::Electron> ElectronNoISo(ElecNoIso,k)      			  ;
+		Pt_NonIsoElec = ElectronNoISo->pt()                           			  ;
+		H1_NoIsoElec_Pt -> Fill(Pt_NonIsoElec)                            		  ;
+
+	  }	//end of for-loop Non-Iso electrons
+// -----------------------------------------------------------------------------------------
+      for(unsigned int  mi=0;  mi< nele;  ++mi)
       {
       
          if(met->pt()< metPtCut_)     continue                                                    ;
-         // if(relIso_elec >0.20)        continue                                                    ;
+         // if(relIso_elec >0.20)        continue                                                 ;
          
          //====================================================================================
          if( mi ==  (unsigned) minE_pairIndex.first || mi == (unsigned) minE_pairIndex.second ) continue;
@@ -710,29 +936,40 @@ if(doPileup_)
          cout<< mi<<" first : "<<  minE_pairIndex.first           ;
          cout<<" sec : "<<  minE_pairIndex.second <<endl          ;
          
-         //=====================================================  
-         edm::Ptr<pat::Electron> myElectron(ElecPat,mi)         ;
-         //==========================================================================
-         // e_dphi               = tbz_met_elec.Phi()- tbz_el.Phi()                       ;
-         e_dphi1              = met->phi()- myElectron->phi()                          ;
-         elec_nu_angle       ->Fill(e_dphi1,MyWeight)                                           ;         
+         //=======================================================  
+         edm::Ptr<pat::Electron> myElectron(ElecPat,mi)                                ;
+         //=======================================================
+         // e_dphi               = tbz_met_elec.Phi()- tbz_el.Phi()                    ;
+        // e_dphi1              = met->phi()- myElectron->phi()                        ;
+
+	// -----New ...by method ---- 
+	e_dphi1              = deltaPhi(met->phi(),myElectron->phi())                  ;
+       
+	cout<<"deltaPhi_method: "<< e_dphi1 <<endl                                     ;
+	cout<<"abs deltaPhi_method: "<< abs(e_dphi1) <<endl                            ;
+	// --------------------------
+        elec_nu_angle       ->Fill(e_dphi1,MyWeight)                                   ;         
          //==========================================================================          
+
          double mMet = sqrt(met->px()*met->px()+met->py()*met->py())                   ;         
+
          if(abs(e_dphi1) > DPhi_ENue_  && myElectron->pt() > 20. && met->pt() > 30. /*&& nbtagjets!=0 */ )
          {
-         tbz_el.SetPxPyPzE(myElectron->px(), myElectron->py(),myElectron->pz(),myElectron->energy()) ;
-         // e_mWT1               = sqrt(2.* met->pt()* myElectron->pt()* (1.-cos(e_dphi1)) );
-         e_mWT1               = sqrt(2.*mMet* myElectron->pt()* (1.-cos(e_dphi1)) )         ;         
-         Pt_Welectrons        = tbz_el.Pt()                                                 ;
-         H1_Pt_Welectrons     ->Fill(Pt_Welectrons,MyWeight)                                         ;  
+
+         tbz_el.SetPxPyPzE(myElectron->px(), myElectron->py(),myElectron->pz(),myElectron->energy())  ;
+         // e_mWT1               = sqrt(2.* met->pt()* myElectron->pt()* (1.-cos(e_dphi1)) )          ;
+         e_mWT1               = sqrt(2.*mMet* myElectron->pt()* (1.-cos(e_dphi1)) )                   ;         
+         Pt_Welectrons        = tbz_el.Pt()                                                           ;
+         H1_Pt_Welectrons     ->Fill(Pt_Welectrons,MyWeight)                                          ;  
          //==========================================================================                    
-         cout<<"e_dphi : "<<e_dphi<<"e_dphi"<<e_dphi                                   ;                                
-         cout<<"  Wenu_Mt : "<< e_mWT1                                                 ;                                              
-         cout<< " cal met : "<< mMet<<" met->pt : "<<met->pt()  <<endl                 ;              
+         cout<<"e_dphi : "<<e_dphi1<<e_dphi                                                  ;                                
+         cout<<"  Wenu_Mt : "<< e_mWT1                                                                ;                                              
+         cout<< " cal met : "<< mMet<<" met->pt : "<<met->pt()  <<endl                                ;              
          //==========================================================================
-         isW_e = true                                                                  ;
+         isW_e = true                                                                                 ;
          if(e_mWT1 > 0.)
-         wenu_mT->Fill(e_mWT1,MyWeight)                                                         ;
+         wenu_mT->Fill(e_mWT1,MyWeight)                                                               ;
+
          }       
          //--------08-05-14----
           if(abs(e_dphi1) > DPhi_ENue_  && myElectron->pt() > 20.  /* && met->pt() > 30.&& nbtagjets!=0 */ )
@@ -741,26 +978,31 @@ if(doPileup_)
          // Pt_Welectrons        = tbz_el.Pt()                                          ;
          // H1_Pt_Welectrons     ->Fill(Pt_Welectrons)                                  ;  
          //==========================================================================                    
-         cout<<"e_dphi : "<<e_dphi<<"e_dphi"<<e_dphi                                   ;                                
-         cout<<"  Wenu_Mt : "<< e_mWT2                                                 ;                                              
-         cout<< " cal met : "<< mMet<<" met->pt : "<<met->pt()  <<endl                 ;              
+         cout<<"e_dphi : "<<e_dphi<<"e_dphi"<<e_dphi                                    ;                                
+         cout<<"  Wenu_Mt : "<< e_mWT2                                                  ;                                              
+         cout<< " cal met : "<< mMet<<" met->pt : "<<met->pt()  <<endl                  ;              
          //==========================================================================
-         isWe_New = true                                                               ;
          if(e_mWT2 > 0.)
-         wenu_mT_New->Fill(e_mWT2,MyWeight)                                                         ;
+		{
+         isWe_New = true                                                                ;
+         wenu_mT_New->Fill(e_mWT2,MyWeight)                                             ;
+	 	}
          }       
+
          //-------------------------
          // isW_e = false                                                               ;
          //===================================================================
-         Mez_e->SetMET(tbz_met)                                                        ;
-         Mez_e->SetLepton(tbz_el, true)                                                ;
-         double MEZ = Mez_e->Calculate()                                               ;
-         double nuE  = sqrt(met->px()*met->px()+met->py()*met->py()+ MEZ*MEZ)          ;
-         tbz_met_elec.SetPxPyPzE(met->px(), met->py(),  MEZ, nuE)                      ;         
+
+         Mez_e->SetMET(tbz_met)                                                         ;
+         Mez_e->SetLepton(tbz_el, true)                                                 ;
+         double MEZ = Mez_e->Calculate()                                                ;
+         double nuE  = sqrt(met->px()*met->px()+met->py()*met->py()+ MEZ*MEZ)           ;
+         tbz_met_elec.SetPxPyPzE(met->px(), met->py(),  MEZ, nuE)                       ;         
+
          //==========================================================================
-         cout<<"(AFTER) met_pT : "<<tbz_met_elec.Pt()                                  ;
-         cout<<" Pz : "<<tbz_met_elec.Pz()<<"   E : "<<nu_e                            ;
-         cout<<"  cal E_T : "<<(sqrt(met->px()*met->px()+met->py()*met->py()))<<endl   ;     
+         cout<<"(AFTER) met_pT : "<<tbz_met_elec.Pt()                                   ;
+         cout<<" Pz : "<<tbz_met_elec.Pz()<<"   E : "<<nu_e                             ;
+         cout<<"  cal E_T : "<<(sqrt(met->px()*met->px()+met->py()*met->py()))<<endl    ;     
          //==========================================================================
          
       }
@@ -768,11 +1010,14 @@ if(doPileup_)
        //==================================================================
       if(isWe_New == true && nbtagjets!=0 )
       {
-        tbz_wenu_cand2 = tbz_el + tbz_met_elec                                ;
-        tbz_wenu_cand = tbz_el+tbz_met                                        ;
-        wenu_pt->Fill(tbz_wenu_cand.Pt(),MyWeight)                            ;
-        // double e_dphi2  = met->phi()- tbz_el.Phi()                            ;
-        // double e_mWT2  = sqrt(2.* met->pt()* tbz_el.Pt()* (1.-cos(e_dphi2)) ) ;
+
+        tbz_wenu_cand2 = tbz_el + tbz_met_elec                                    ;
+        tbz_wenu_cand = tbz_el+tbz_met                                            ;
+        wenu_pt->Fill(tbz_wenu_cand.Pt(),MyWeight)                                ;
+        
+	// double e_dphi2  = met->phi()- tbz_el.Phi()                             ;
+        // double e_mWT2  = sqrt(2.* met->pt()* tbz_el.Pt()* (1.-cos(e_dphi2)) )  ;
+
         if(tbz_wenu_cand.Mt() > 0.)
         wenu_transM2->Fill(tbz_wenu_cand.Mt(),MyWeight)                  ;
         if(tbz_wenu_cand2.M() > 0.)
@@ -783,9 +1028,11 @@ if(doPileup_)
          TLorentzVector e_corr_b                                         ;
                                                                          
          double diff=1000.                                               ;
+
          
          for(unsigned i=0; i< vec_bjet.size();i++)
          {
+
             double wb_dphi = tbz_wenu_cand.DeltaPhi(vec_bjet.at(i))      ;
             wenu_b_angle->Fill(wb_dphi,MyWeight)                         ;
             if(wb_dphi > 1.0)                                                 
@@ -797,13 +1044,16 @@ if(doPileup_)
             top_mE->Fill( tbz_topE.M() ,MyWeight)                        ;
             if(tbz_topE.Pt() > 0.)                                       
             top_ptE->Fill( tbz_topE.Pt(),MyWeight )                      ;
+
             if( fabs(tbz_topE.M()-173.) < diff  )                            
             {                                                              
                diff = fabs(tbz_topE.M()-173.)                            ;
                e_corr_top = tbz_topE                                     ;
                e_corr_b = vec_bjet.at(i)                                 ;                                                                     
             }                                                        
+
          }//for loop                                                 
+
          if( e_corr_top.Mt() > 0.)                                                           
          top_mTE_2nd->Fill(e_corr_top.Mt() ,MyWeight )                            ;
          if(e_corr_top.M()  > 0.)
@@ -869,7 +1119,7 @@ if(doPileup_)
        //make vector of SFOS masses
        tbzHelper.makePairs(m_preSel_muon , sfos_masses, minM_pairIndex, dimuon_cand )    ;             
        int mu_cont_size = m_preSel_muon.size()                                           ;
-        if(dimuon_cand.size()) is2muon =true                                             ; 
+       // if(dimuon_cand.size()) is2muon =true                                             ; 
         
        for(unsigned ii=0; ii< dimuon_cand.size(); ii++ )
         {
@@ -880,19 +1130,22 @@ if(doPileup_)
                                  && minM_pairIndex.second<mu_cont_size)
            {
            
-            MOUN_ZMM = dimuon_cand.at(ii).mass()      ;  
-            cout<< "MUON_ZMASS: " <<MOUN_ZMM<<endl    ;
+            MOUN_ZMM = dimuon_cand.at(ii).mass()                                        ;  
+            cout<< "MUON_ZMASS: " <<MOUN_ZMM<<endl                                      ;
             // if( MOUN_ZMM>= MinZMAss_ && MOUN_ZMM < MaxZMass_)             
-            inv_Z_mass->Fill(MOUN_ZMM,MyWeight)                ;
-            pT_Z_uu   = dimuon_cand.at(ii).pt()       ;
-            pT_Z      ->Fill(pT_Z_uu,MyWeight)                 ;
-            eta_Z_uu  = dimuon_cand.at(ii).eta()      ;
-            eta_Zuu_H1 ->Fill(eta_Z_uu,MyWeight)               ;             
-            // is2muon =true                             ;            
+            inv_Z_mass->Fill(MOUN_ZMM,MyWeight)                                         ;
+            pT_Z_uu   = dimuon_cand.at(ii).pt()                                         ;
+            pT_Z      ->Fill(pT_Z_uu,MyWeight)                                          ;
+            eta_Z_uu  = dimuon_cand.at(ii).eta()                                        ;
+            eta_Zuu_H1 ->Fill(eta_Z_uu,MyWeight)                                        ;             
+            if (MOUN_ZMM>= 60 && MOUN_ZMM < 120 ) is2muon =true                         ;  // before it was simple "is2muon =true"          
+
             }//end of if-loop for making Z candidate
             
-         Invariant_Zmass_vs_MET->Fill(dimuon_cand.at(ii).mass(),met->pt())  ;
+            Invariant_Zmass_vs_MET->Fill(dimuon_cand.at(ii).mass(),met->pt())           ;
+
          // if( nmuons == 3 /*&& metPtCut_*/ && MOUN_ZMM>= MinZMAss_ && MOUN_ZMM < MaxZMass_) m_muonCutFlow->Fill(5)  ;
+
        //==========================================                         
          cout <<"(Z CANDIDATE INSIDE TOP ANALYZER )ii : "                   ;
          cout <<ii<<"   size : " <<sfos_masses.at(ii)<<endl                 ;  
@@ -902,8 +1155,10 @@ if(doPileup_)
       if( dimuon_cand.size()  && minM_pairIndex.first<mu_cont_size 
                               && minM_pairIndex.second<mu_cont_size )
       {
-      double dphi =  m_preSel_muon.at(minM_pairIndex.first).phi()
-                     - m_preSel_muon.at( minM_pairIndex.second).phi()     ; 
+	double dphi = deltaPhi(m_preSel_muon.at(minM_pairIndex.first).phi(),m_preSel_muon.at( minM_pairIndex.second).phi());
+
+     // double dphi =  m_preSel_muon.at(minM_pairIndex.first).phi()
+       //              - m_preSel_muon.at( minM_pairIndex.second).phi()     ; 
       z_lep_dphi->Fill(dphi,MyWeight)                                     ;
       }//end if-loop  
       
@@ -928,28 +1183,30 @@ if(doPileup_)
          if( mi ==  minM_pairIndex.first || mi ==  minM_pairIndex.second ) continue  ; 
          if(met->pt()< metPtCut_)                                          continue  ;
          if(relIso > .20)                                                  continue  ;
+	cout<<"relIso: "<<relIso<<endl;
        //=========================================================
        cout<<"muon coll size : "<<muonCollSize<< "  mi "                             ;
        cout<< mi<< "  first : "<<  minM_pairIndex.first<<" sec : "                   ;
        cout<<  minM_pairIndex.second <<endl                                          ; 
        //=========================================================                        
-       edm::Ptr<pat::Muon> myMuon( muonColl,mi)                                     ; 
+       edm::Ptr<pat::Muon> myMuon( muonColl,mi)                                      ; 
        // reco::PFCandidate
-       // edm::Ptr<reco::PFCandidate> myMuon( muonColl,mi)                              ;
-       //=========================================================                   
+       // edm::Ptr<reco::PFCandidate> myMuon( muonColl,mi)                           ;
+       //=========================================================                 
        reco::WMuNuCandidate myW( myMuon, met)                                        ;
        double wm=myW.massT()                                                         ;
        //=========================================================                   
        cout<<"index (Top Analyzer, W candidate ): mi  "                              ;
        cout<<  mi <<"  Transverse W mass "<< wm<<endl                                ;      
        //=========================================================
-        acop->Fill ( myW.acop() )                                         ;
-        // dphi         = tbz_met_mu.Phi()-tbz_mu.Phi()                   ;
-        dphi1        = met->phi() - myMuon->phi()                         ;
-        lep_nu_angle ->Fill(dphi1,MyWeight)                                        ;
+        acop->Fill ( myW.acop() )                                                    ;
+        // dphi         = tbz_met_mu.Phi()-tbz_mu.Phi()                              ;
+        //dphi1        = met->phi() - myMuon->phi()                                    ;
+	dphi1        = deltaPhi(met->phi(),myMuon->phi())                            ;
+        lep_nu_angle ->Fill(dphi1,MyWeight)                                          ;
        //======================================================                                     
-        double muMet = sqrt(met->px()*met->px()+met->py()*met->py())     ;
-         cout<<"dPhi(mu, nu) "<<dphi1<<endl;
+        double muMet = sqrt(met->px()*met->px()+met->py()*met->py())                 ;
+        cout<<"dPhi(mu, nu) "<<dphi1<<endl                                           ;
          
          if(abs(dphi1)> DPHi_MuNue_ && myMuon->pt() > 20. && muMet > 30. /*&& nbtagjets!=0 */) 
                { 
@@ -964,13 +1221,17 @@ if(doPileup_)
              // mupT_ratio = tbz_mu.Pt()/tbz_met_mu.Pt()                         ;
              
         //=====================================================                   
-         cout<<"dphi : "<<dphi<<" dphi  "<<dphi                          ;
-         cout<<"tran mass : "<< mWT1                                     ;
-         cout<< " cal met : "<< muMet<<" met->pt : "<<met->pt() <<endl   ;
+         cout<<"dphi : "<<dphi<<" dphi  "<<dphi                                  ;
+         cout<<"tran mass : "<< mWT1                                             ;
+         cout<< " cal met : "<< muMet<<" met->pt : "<<met->pt() <<endl           ;
        //=======================================================
-        isW=true                                                         ;
-        if( mWT1 > 0.)
-        w_mT->Fill(mWT1,MyWeight)                                                 ;        
+	// if( mWT1 > 0.)
+	 //  {
+        isW=true                                                                 ;
+	if( mWT1 > 0.)
+        w_mT->Fill(mWT1,MyWeight)                                                ;        
+	 //  }
+
       }
       //-------08-05-14----------
       if(abs(dphi1)> DPHi_MuNue_ && myMuon->pt() > 20. /* && muMet > 30. && nbtagjets!=0 */) 
@@ -988,7 +1249,7 @@ if(doPileup_)
        
         isW_New = true                                                   ;
         if( mWT2 > 0.)
-        w_mT_New->Fill(mWT2,MyWeight)                                             ; 
+        w_mT_New->Fill(mWT2,MyWeight)                                    ; 
         
       }     
 
@@ -1004,8 +1265,8 @@ if(doPileup_)
        cout<<"   E : "<<nu_e                                                                 ;
        cout<<"  cal E_T : "<<(sqrt( met->px()*met->px()+met->py() * met->py() ))<<endl       ;
        //======================================================        
-        n_muons++                                                        ;
-        cout<< "Total Muons in an Event: "<< n_muons <<endl              ; 
+        n_muons++                                                                            ;
+        cout<< "Total Muons in an Event: "<< n_muons <<endl                                  ; 
         
       } //for-loop Z-boson and then to reconstruct W-boson
 
@@ -1021,39 +1282,40 @@ if(doPileup_)
        // if (!isW_e && is2elec && isW)   is2elec1muon     =    true          ;
        if (is2elec && isW_e )          is3elec          =    true             ;      
       //============================================================== 
-      cout<<" is3muon : "<< is3muon<<" ,is3elec : "                                                   ;
-      cout<<is3elec<<" ,is2muon1elec : "<< is2muon1elec                                               ;
-      cout<<" ,is2elec1muon : "<<is2elec1muon<< " ,1s2muon : "                                        ;
-      cout<< is2muon<< " ,is2elec : "<< is2elec<< " ,is1muon : "                                      ;
-      cout<< is1muon << " ,is1elec :  "<< is1elec                                                     ;
-      cout<<"isW: "<<isW<<" ,isW_e: "<<isW_e<<endl                                                    ;                                                                                      
-      cout<<"(EVEN AFTER) met_pT : "<<tbz_met.Pt()                                                    ;
-      cout<<" Pz : "<<tbz_met.Pz()<<"   E : "<<nu_e                                                   ;
-      cout<<"  cal E_T : "<<(sqrt( met->px()*met->px()+met->py()*met->py() ))<<endl                   ;
-      cout<<"isW : "<<isW<<"  nbtag : "<<nbtagjets<<endl                                              ;
-      //===============================================================================================
+      cout<<" is3muon : "<< is3muon<<" ,is3elec : "                                         ;
+      cout<<is3elec<<" ,is2muon1elec : "<< is2muon1elec                                     ;
+      cout<<" ,is2elec1muon : "<<is2elec1muon<< " ,1s2muon : "                              ;
+      cout<< is2muon<< " ,is2elec : "<< is2elec<< " ,is1muon : "                            ;
+      cout<< is1muon << " ,is1elec :  "<< is1elec                                           ;
+      cout<<"isW: "<<isW<<" ,isW_e: "<<isW_e<<endl                                          ;                                                                                      
+      cout<<"(EVEN AFTER) met_pT : "<<tbz_met.Pt()                                          ;
+      cout<<" Pz : "<<tbz_met.Pz()<<"   E : "<<nu_e                                         ;
+      cout<<"  cal E_T : "<<(sqrt( met->px()*met->px()+met->py()*met->py() ))<<endl         ;
+      cout<<"isW : "<<isW<<"  nbtag : "<<nbtagjets<<endl                                    ;
+      //============================================================== 
       
       if(isW_New == true && nbtagjets!=0 /*&& dphi > 1. && mupT_ratio > 0.5*/)
       {
-         tbz_w_cand2 = tbz_mu + tbz_met_mu                           ;
-         tbz_w_cand = tbz_mu + tbz_met                               ;
+         tbz_w_cand2 = tbz_mu + tbz_met_mu                                    ;
+         tbz_w_cand = tbz_mu + tbz_met                                        ;
          w_pt->Fill(tbz_w_cand.Pt(),MyWeight)                                 ;
          if(tbz_w_cand.Mt()> 0.)
          w_mT2->Fill(tbz_w_cand.Mt(),MyWeight)                                ;
          if(tbz_w_cand2.M() > 0.)                                    
          w_m->Fill(tbz_w_cand2.M(),MyWeight)                                  ;
                                                                      
-         TLorentzVector corr_top                                     ;
-         TLorentzVector corr_b                                       ;
-         double diff=1000.                                           ;
+         TLorentzVector corr_top                                              ;
+         TLorentzVector corr_b                                                ;
+         double diff=1000.                                                    ;
                                                                      
          for(unsigned i=0; i< vec_bjet.size();i++)                   
          {                                                           
-            double wdphi = tbz_w_cand.DeltaPhi(vec_bjet.at(i))       ;
+            double wdphi = tbz_w_cand.DeltaPhi(vec_bjet.at(i))                ;
+	   
             w_b_angle->Fill(wdphi,MyWeight)                                   ;
             if(wdphi > 1.)                                           
-            tbz_top = tbz_w_cand+vec_bjet.at(i)                      ;
-            //w_mT->Fill( tbz_w_cand.Mt())                           ;
+            tbz_top = tbz_w_cand+vec_bjet.at(i)                               ;
+            //w_mT->Fill( tbz_w_cand.Mt())                                    ;
             if(tbz_top.Mt() > 0.)
             top_mT->Fill( tbz_top.Mt(),MyWeight)                              ;
             if(tbz_top.M() > 0.)                                     
@@ -1063,11 +1325,17 @@ if(doPileup_)
                                                                      
             if( fabs(tbz_top.M()-173.)<diff  )                       
             {                                                        
-               diff = fabs(tbz_top.M()-173.)                         ;
-               corr_top = tbz_top                                    ;
-               corr_b = vec_bjet.at(i)                               ;
+
+
+               diff = fabs(tbz_top.M()-173.)                                  ;
+               corr_top = tbz_top                                             ;
+               corr_b = vec_bjet.at(i)                                        ;
+
+
             }//end of if-loop                                        
          }//for loop                                                 
+
+
          if(corr_top.Mt() > 0.)                                                           
          top_mT_2nd->Fill(corr_top.Mt(),MyWeight)                             ;
          if(corr_top.M() > 0.)                                       
@@ -1075,21 +1343,46 @@ if(doPileup_)
          w_b_angle_2nd->Fill( tbz_w_cand.DeltaPhi(corr_b),MyWeight)           ;
          
          //====================================================
-         cout<< "top mass "<<tbz_top.M()                             ;
-         cout<<" transverse M "<<tbz_top.Mt()<<"  W Mt : "           ;
-         cout<<tbz_w_cand.Mt()<<" W Mass : "<<tbz_w_cand.M()<<endl   ;
+         cout<< "top mass "<<tbz_top.M()                                      ;
+         cout<<" transverse M "<<tbz_top.Mt()<<"  W Mt : "                    ;
+         cout<<tbz_w_cand.Mt()<<" W Mass : "<<tbz_w_cand.M()<<endl            ;
          //========================================================
+
+
          
        }//END OF IF-LOOP
+
+
        delete Mez;
 
+
+
+
+	//===========================================
+	//          Fake Rate Combinations          =
+	//===========================================
+/*
+	if(is2elec && NonIsoElec &&  && e_mWT2 < 20. && ELECCTRON_MSS >0. && ELECCTRON_MSS >= MinZMAss_ && ELECCTRON_MSS < MaxZMass_)
+	{
+	
+	}
+	if(is2muon && NonIsoMu && MOUN_ZMM > 0. && MOUN_ZMM>= MinZMAss_ && MOUN_ZMM < MaxZMass_)
+	{
+	}
+	if(is2muon && NonIsoElec && MOUN_ZMM > 0. && MOUN_ZMM>= MinZMAss_ && MOUN_ZMM < MaxZMass_)
+	{
+	}
+	if(is2elec && NonIsoMu && ELECCTRON_MSS >0. && ELECCTRON_MSS >= MinZMAss_ && ELECCTRON_MSS < MaxZMass_)
+	{
+	}
+*/
        //==============================================
        //         COMBINATIONS                        =
        //==============================================
        
 
        // ======================= is3elec      =====================
-       if(nelectrns == 3 && is2elec && isWe_New && nmuons ==0  &&  ELECCTRON_MSS >0. && e_mWT2 > 0. && ELECCTRON_MSS >= MinZMAss_ && ELECCTRON_MSS < MaxZMass_)
+       if(nelectrns == 3 && is2elec && isWe_New && nmuons == 0  &&  ELECCTRON_MSS >0. && e_mWT2 > 0. /*e_mWT2 > 20.*/ && ELECCTRON_MSS >= MinZMAss_ && ELECCTRON_MSS < MaxZMass_)
        {        
        m_muonCutFlow     ->Fill(3) ; // Events after nelectrns == 3 && is2elec && isWe_New && nmuons ==0  &&  ELECCTRON_MSS >0. && e_mWT2 > 0. cut
        // ---- 170814------
@@ -1180,11 +1473,16 @@ if(doPileup_)
       // if(nbtagjets == 1 && metPtCut_ && jets->size()> 1 && is3muon ) isW=true  if( mWT1 > 0.) isW_New mWT2
       
       //Without MET CUT
-      if(nmuons == 3 && is2muon && isW_New && nelectrns == 0 && MOUN_ZMM > 0. && mWT2 > 0. && MOUN_ZMM>= MinZMAss_ && MOUN_ZMM < MaxZMass_)
-      
-      //With MET CUT
+      if(nmuons == 3 && is2muon && isW_New && nelectrns == 0 && MOUN_ZMM > 0. && mWT2 > 0. /*mWT2 > 20.*/ && MOUN_ZMM>= MinZMAss_ && MOUN_ZMM < MaxZMass_)
+	{
+	// Fill fake histogram here
+	//float fakerate = FR_Histo->GetBinContent(FR_Histo->FindBin(mu_pt, mu_eta));	
+
+	//m_muonCutFlow_fake->Fill(4, fakerate/(1-fakerate));
+      //  if(nmuons == 3 )
+       //With MET CUT
        // if(nmuons == 3 && is2muon && isW && nelectrns == 0 && MOUN_ZMM > 0. && mWT1 > 0. /*is3muon*/ )
-      {     
+         // {     
          m_muonCutFlow     ->Fill(4) ; // Events after nmuons == 3 && is2muon && isW_New && nelectrns == 0 && MOUN_ZMM > 0. && mWT2 > 0. cut      
     
       // ---- 170814------
@@ -1219,6 +1517,7 @@ if(doPileup_)
           for(unsigned int k = 0; k < LeadngJetVec.size(); k++)
           {
           double LJetPt = LeadngJetVec.at(k).Pt();
+	 cout<<"LJetPt: " <<LJetPt<<endl;
           LeadingJets_pt_is3muon ->Fill(pt_jets,MyWeight)                 ;
           }
        
@@ -1268,7 +1567,8 @@ if(doPileup_)
          if(corr_top_is3muon.M() > 0.)                                    
          top_m_2nd_is3muon->Fill(corr_top_is3muon.M() ,MyWeight)                    ;
          w_b_angle_2nd_is3muon->Fill(tbz_w_cand.DeltaPhi(corr_b_is3muon),MyWeight) ;         
-      }
+      //		}
+	}// Fake 
       //============is3muon END ====================================
       if(nmuons == 2 && nelectrns == 1 && is2muon && isWe_New &&  MOUN_ZMM > 0. && e_mWT2 > 0. && MOUN_ZMM>= MinZMAss_ && MOUN_ZMM < MaxZMass_ )
       {     
@@ -1467,7 +1767,7 @@ if(doPileup_)
     
     //========================  is3elec-Final      ================ 
     
-       if( nelectrns == 3 && is2elec && isWe_New && nmuons ==0  &&  ELECCTRON_MSS > 0. && e_mWT2 > 0. && nbtagjets >= 1 && njets >= 1 &&  metPtCut_ && ELECCTRON_MSS >= MinZMAss_ && ELECCTRON_MSS < MaxZMass_)
+ if( nelectrns == 3 && is2elec && isWe_New && nmuons ==0  &&  ELECCTRON_MSS > 0. && e_mWT2 > 0. && nbtagjets >= 1 && njets >= 1 &&  metPtCut_ && ELECCTRON_MSS >= MinZMAss_ && ELECCTRON_MSS < MaxZMass_)
        { 
           m_muonCutFlow     ->Fill(7) ;  // Events after nelectrns == 3 && is2elec && isWe_New && nmuons ==0  &&  ELECCTRON_MSS > 0. && e_mWT2 > 0. && nbtagjets >= 1 && MET-Cut
           ElecPt_is3elec_Final         ->Fill(ElecPt,MyWeight)                 ;             
@@ -1597,6 +1897,7 @@ if(doPileup_)
           for(unsigned int k = 0; k < LeadngJetVec.size(); k++)
           {
           double LJetPt_is3muonF = LeadngJetVec.at(k).Pt()               ;
+		cout<<"LJetPt_is3muonF: "<<LJetPt_is3muonF<<endl;
           LeadingJets_pt_is2muon1elec_Final   ->Fill(pt_jets,MyWeight)   ;
           }   
         
@@ -1645,7 +1946,7 @@ if(doPileup_)
          wb_angle_2nd_is2mu1E_Final->Fill(tbz_wenu_cand.DeltaPhi(e_corr_b_is2muon1elec),MyWeight)      ;          
       }      
       //=========is2muon1elec END ==================================
-     if(nmuons == 1 && nelectrns == 2&& is2elec && isW_New && ELECCTRON_MSS > 0. && mWT2 > 0. && nbtagjets >= 1 && njets >= 1 && metPtCut_  && ELECCTRON_MSS >= MinZMAss_ && ELECCTRON_MSS < MaxZMass_)
+     if(nmuons == 1 && nelectrns == 2 && is2elec && isW_New && ELECCTRON_MSS > 0. && mWT2 > 0. && nbtagjets >= 1 && njets >= 1 && metPtCut_  && ELECCTRON_MSS >= MinZMAss_ && ELECCTRON_MSS < MaxZMass_)
       {
       
        m_muonCutFlow     ->Fill(9) ; // Events after nmuons == 1 && nelectrns == 2&& is2elec && isW_New && ELECCTRON_MSS > 0. && mWT2 > 0. && nbtagjets >= 1 && MET Cut.
@@ -1705,9 +2006,13 @@ if(doPileup_)
          w_b_angle_2nd_is2elec1muon_Final->Fill(tbz_w_is2elec1muon.DeltaPhi(corr_b_is2elec1muon),MyWeight) ;              
       } 
        //=========is2elec1muon END ==================================
-       
-   }// end of 3 tight leptons loop  
-   
+     //  tree_    ->Fill(); 
+  	    }// end of 3 tight leptons loop  
+  
+	}// end of trigger For-Loop
+
+//	tree_    ->Fill();
+ 
     //////////////////////////////////////////////////////////////////////
     cout<<"\n";
     cout<<"----------------END OF THE EVENT---------------"<<"\n"<<endl;
@@ -1770,24 +2075,35 @@ TbZTopAnalyzer::beginJob()
  w_b_angle              = fs1->make<TH1D> ("w_b_angle","opening angle",100,-3.14,3.14)                      ;
  w_b_angle_2nd          = fs1->make<TH1D> ("w_b_angle_2nd","opening angle",100,-3.14,3.14)                  ;
  lep_nu_angle           = fs1->make<TH1D> ("lep_nu_angle","lep_nu_angle",100,-3.14,3.14)                    ;
- bjet_pt                = fs1->make<TH1D> ("pt_bjet","bjet pt",100, 0., 300. )                              ;
- bjet_desc              = fs1->make<TH1D> ("bjet_desc","bjet descriminant",100, -2., 2. )                   ;
+
+
+ //bjet_pt                = fs1->make<TH1D> ("pt_bjet","bjet pt",100, 0., 300. )                              ;
+// bjet_desc              = fs1->make<TH1D> ("bjet_desc","bjet descriminant",100, -2., 2. )                   ;
+
+
  top_pt                 = fs1->make<TH1D> ("pt_top","Top pt plot",100,0.,400.)                              ;
  jet_pt                 = fs1->make<TH1D> ("pt_jet","light jet pt plot",100,0.,200.)                        ;
+
   //--------------------
  Invariant_Zmass_vs_MET = fs1->make<TH2D> ("Invariant_Zmass_vs_MET","2D plot InvZmass vs MET",100,50.,120,100,0.,100.)   ;
  Isolation_vs_MET       = fs1->make<TH2D> ("Isolation_vs_MET","2D plot Isolation vs MET",100, 0.0, 10.0, 100,0.,100. )   ;
  ST_vs_Isolation        = fs1->make<TH2D> ("ST_vs_Isolation", "2D plot ST vs Isolation",100, 0.0, 700., 100, 0.0, 10.0)  ;
  ST_vs_MET              = fs1->make<TH2D> ("ST_vs_MET", "2D plot ST vs MET",100, 0.0, 700., 100, 0.0, 150.0)             ;
+
+
  //---------------------
  Isolation_Elec1        = fs1->make<TH1D> ("Isolation_Elec1", "Elctron_pT_Iso", 100, -1., 10.)            ;
  Isolation_Elec2        = fs1->make<TH1D> ("Isolation_Elec2", "Elctron_ECalRecHir_Iso", 100, -1., 10.)    ;
  Isolation_Elec3        = fs1->make<TH1D> ("Isolation_Elec3", "Elctron_HCalSumEt2_Iso", 100, -1., 10.)    ;
  Isolation_Elec4        = fs1->make<TH1D> ("Isolation_Elec4", "Elctron_HCalSumEt2_Iso", 100, -1., 10.)    ;
+
+
  //--------------------
  //Iso_charged            = fs1->make<TH1D> ("Iso_charged", "charge isolation", 100, 0.0, 5.0)                  ;
  //Iso_photon             = fs1->make<TH1D> ("Iso_photon", "photon isolation", 100, 0.0, 100)                   ;
  //Iso_neutral            = fs1->make<TH1D> ("Iso_neutral", "nuetral isolation", 100, 0.0, 100)                 ;
+
+
  //...
  jet_mult               = fs1->make<TH1D> ("mult_jet","jet multiplicity",10, 0.,10.)                          ;
  bjet_mult              = fs1->make<TH1D> ("mult_bjet","bjet multiplicity",10, 0.,10.)                        ;
@@ -1808,7 +2124,9 @@ TbZTopAnalyzer::beginJob()
   H1_delta_Eta_jet_muon  = fs1->make<TH1D> ("H1_delta_Eta_jet_muon","H1_delta_Eta_jet_muon",100.0,-3.14,3.14)   ;
   H1_delta_Phi_jet_muon  = fs1->make<TH1D> ("H1_delta_Phi_jet_muon","H1_delta_Phi_jet_muon",100.0,-3.14,3.14)   ;
   H1_delta_R_jet_muon    = fs1->make<TH1D> ("H1_delta_R_jet_muon  ","H1_delta_R_jet_muon  ",100.0,-3.0,10.0)    ;
-  // -----------16-2014 ----------- 
+ 
+
+ // -----------16-2014 ----------- 
  // pt_ratio_GenRecoMuon    = fs1->make<TH1D>  ("pt_ratio_GenRecoMuon","pt_ratio_GenRecoMuon", 100, 0., 5.)       ;
   //Muonpt_ratio_cutdR      = fs1->make<TH1D>  ("Muonpt_ratio_cutdR", "Muonpt_ratio_cutdR", 100, 0., 5.)          ;
   //trueZuuMass             = fs1->make<TH1D>  ("Zuu_Mass_true", "Zuu_Mass_true",40, 70., 110.)                   ;
@@ -1833,6 +2151,8 @@ TbZTopAnalyzer::beginJob()
   //dphi_enu_true           = fs1->make<TH1D> ("dphi_enu_true","dphi_enu_true",   60, -3., 3.)     ;
  // dphi_muNu_true          = fs1->make<TH1D> ("dphi_muNu_true","dphi_muNu_true", 60, -3., 3.)     ;
   
+
+
   //-----02-02-14------------------------------------------------------------------------------------
   wenu_pt_is3elec         = fs1->make<TH1D> ("w_pt_is3elec", "w_pt_is3elec", 40, 0., 200) ;
   wenu_m_is3elec          = fs1->make<TH1D> ("we_inv_M_is3elec", "we_inv_M_is3elec", 40, 0.,200.) ;
@@ -1854,7 +2174,7 @@ TbZTopAnalyzer::beginJob()
   top_m_2nd_is3muon       = fs1->make<TH1D> ("t_inv_M_2nd_is3muon", "t_inv_M_2nd_is3muon", 40,0.,400.)      ;   
   w_b_angle_2nd_is3muon   = fs1->make<TH1D> ("wb_angle_2nd_is3muon", "wb_angle_2nd_is3muon", 60,-3.,3.)   ;
   //---
-  w_pt_is2muon1elec         = fs1->make<TH1D> ("w_pt_is2muon1elec", "w_pt_is2muon1elec", 40, 0., 200)            ;
+  //w_pt_is2muon1elec         = fs1->make<TH1D> ("w_pt_is2muon1elec", "w_pt_is2muon1elec", 40, 0., 200)            ;
   wenu_m_is2muon1elec       = fs1->make<TH1D> ("we_inv_M_is2muon1elec","we_inv_M_is2muon1elec",40,0.,200.)             ; 
   wb_angle_is2muon1elec     = fs1->make<TH1D> ("wb_angle_is2muon1elec","wb_angle_is2muon1elec",60,-3.,3.)               ;  
   top_mTE_is2muon1elec      = fs1->make<TH1D> ("t_trans_M_is2muon1elec","t_trans_M_is2muon1elec",40,0.,400.)            ; 
@@ -1928,9 +2248,10 @@ TbZTopAnalyzer::beginJob()
   SubLeadingElec_Pt           = fs1->make<TH1D> ("SubLeadingElec_Pt","SubLeadingElec_Pt",40,0.,200.)            ;
   ThrdLeadingElec_Pt          = fs1->make<TH1D> ("ThrdLeadingElec_Pt","ThrdLeadingElec_Pt",40,0.,200.)          ;
    
-   H1_noOfleptons      = fs1->make<TH1D> ("H1_noOfleptons", "H1_noOfleptons", 100, 0.0, 10.0)         ;
-   H1_noOfMuon      = fs1->make<TH1D> ("H1_noOfMuon", "H1_noOfMuon", 100, 0.0, 10.0)                  ;
-   H1_noOfElectrons      = fs1->make<TH1D> ("H1_noOfElectrons", "H1_noOfElectrons", 100, 0.0, 10.0)   ;
+   H1_noOfleptons       = fs1->make<TH1D> ("H1_noOfleptons", "H1_noOfleptons", 10, 0.0, 10.0)                   ;
+   H1_noOfMuon          = fs1->make<TH1D> ("H1_noOfMuon", "H1_noOfMuon", 10, 0.0, 10.0)                         ;
+   H1_noOfElectrons     = fs1->make<TH1D> ("H1_noOfElectrons", "H1_noOfElectrons", 10, 0.0, 10.0)               ;
+
    //---020414
    MuonsPt_is3muon      = fs1->make<TH1D>("MuonsPt_is3muon","MuonsPt_is3muon",40,0.,200.)             ;
    ElecPt_is3elec       = fs1->make<TH1D>("ElecPt_is3elec","ElecPt_is3elec",40,0.,200.)               ;
@@ -2102,8 +2423,15 @@ TNVTX_        = fs1  ->make<TH1D>("TNVTX","No. reconstructed vertices",60,0.,60.
 H1_pT_Zee                   = fs1->make<TH1D> ("pT_Zee","pT_Zee", 100.,0.,200.)                              ;
 //-----130914 -------------
 //h_bJetsEta = fs1->make<TH1D>("bTaggedJetEta","eta of the bTagged jets",100,-5,5);
+H1_NoIsoElec_Pt = fs1->make<TH1D> ("H1_NoIsoElec_Pt","H1_NoIsoElec_Pt",100,0.,200.)                          ;
 
+//-------create a tree for the selected events--------
+ // tree_ = fs1->make<TTree>("AnaTree", "AnaTree")  ;
+  //createMiniEventTree(tree_,ev_)                 ;
 //-----------
+
+
+
 //h_bJetsEta ->Sumw2() ;
 //-----------
 RWTInTime_ ->Sumw2() ;
@@ -2322,8 +2650,12 @@ inv_Z_mass_is2elec1muon_Backgrnd_0bjet ->Sumw2() ;
   w_b_angle              ->Sumw2()    ;
   w_b_angle_2nd          ->Sumw2()    ;
   lep_nu_angle           ->Sumw2()    ;
-  bjet_pt                ->Sumw2()    ;
-  bjet_desc              ->Sumw2()    ;
+
+
+  //bjet_pt                ->Sumw2()    ;
+  //bjet_desc              ->Sumw2()    ;
+
+
   top_pt                 ->Sumw2()    ;
   jet_pt                 ->Sumw2()    ;
    //--------------------             
@@ -2336,11 +2668,13 @@ inv_Z_mass_is2elec1muon_Backgrnd_0bjet ->Sumw2() ;
   Isolation_Elec2        ->Sumw2()    ;
   Isolation_Elec3        ->Sumw2()    ;
   Isolation_Elec4        ->Sumw2()    ;
+
   //--------------------              
   //Iso_charged            ->Sumw2()    ;
   //Iso_photon             ->Sumw2()    ;
   //Iso_neutral            ->Sumw2()    ;
   //...                               
+
   jet_mult               ->Sumw2()    ;
   bjet_mult              ->Sumw2()    ;
   z_lep_dphi             ->Sumw2()    ;
@@ -2360,6 +2694,8 @@ inv_Z_mass_is2elec1muon_Backgrnd_0bjet ->Sumw2() ;
    H1_delta_Eta_jet_muon  ->Sumw2()       ;
    H1_delta_Phi_jet_muon  ->Sumw2()       ;
    H1_delta_R_jet_muon    ->Sumw2()       ;
+
+
    // -----------16-2014 ------
   // pt_ratio_GenRecoMuon    ->Sumw2()      ;
   // Muonpt_ratio_cutdR      ->Sumw2()      ;
@@ -2385,7 +2721,8 @@ inv_Z_mass_is2elec1muon_Backgrnd_0bjet ->Sumw2() ;
   // dphi_enu_true           ->Sumw2()        ;
 //dphi_muNu_true          ->Sumw2()        ;
                                             
-   //-----02-02-14-------------             
+  //-----02-02-14-------------            
+
    wenu_pt_is3elec         ->Sumw2()        ;
    wenu_m_is3elec          ->Sumw2()        ;
    wb_angle_is3elec        ->Sumw2()        ;
@@ -2405,8 +2742,10 @@ inv_Z_mass_is2elec1muon_Backgrnd_0bjet ->Sumw2() ;
    top_mT_2nd_is3muon      ->Sumw2()        ;
    top_m_2nd_is3muon       ->Sumw2()        ;
    w_b_angle_2nd_is3muon   ->Sumw2()        ;
+   
    //---
-   w_pt_is2muon1elec         ->Sumw2()      ;
+   //w_pt_is2muon1elec         ->Sumw2()      ;
+   
    wenu_m_is2muon1elec       ->Sumw2()      ;
    wb_angle_is2muon1elec     ->Sumw2()      ;
    top_mTE_is2muon1elec      ->Sumw2()      ;
@@ -2472,15 +2811,21 @@ inv_Z_mass_is2elec1muon_Backgrnd_0bjet ->Sumw2() ;
    H1_Pt_Wmuons                ->Sumw2()    ;
    Pt_Wmuons_is2elec1muon      ->Sumw2()    ;
    Pt_Wmuons_is3muon           ->Sumw2()    ;
+
    //--- 06-02-2104----                     
    //Cutflow_AllComb             ->Sumw2()    ;
    //-------                   
+
    H1_pT_Zee                    ->Sumw2()   ;
+
    //trueTop_wbElec               ->Sumw2()   ;
    //H1_DPhi_true_wb              ->Sumw2()   ;
    //H1_TOPtrue_transM_Elec       ->Sumw2()   ;
+
    wenu_transM2                 ->Sumw2()   ;
    w_mT2                        ->Sumw2()   ;
+
+
    //trueTop_wbMuons              ->Sumw2()   ;
   // H1_DPhi_true_wbMu            ->Sumw2()   ;
   // H1_TOPtrue_transM_Muon       ->Sumw2()   ;
@@ -2552,6 +2897,8 @@ TbZTopAnalyzer::endJob()
    ST_vs_Isolation              ->GetYaxis()->SetTitle("MuonISO[GeV]")               ;
    MuonIsolation_pt             ->GetXaxis()->SetTitle("Muon_pt_ISO[GeV]")           ;
    MuonIsolation_pt             ->GetYaxis()->SetTitle ("Events")                    ;
+
+
    //--- 28-01-2014-------
    //true_transWeMass_H1          ->GetXaxis()->SetTitle ("true-transM-Wenu [GeV/c2]") ;
    //true_transWeMass_H1          ->GetYaxis()->SetTitle ("Events")                    ;
@@ -2563,6 +2910,8 @@ TbZTopAnalyzer::endJob()
    //ELectrons_trueW              ->GetYaxis()->SetTitle ("Events")                    ;
   // trueZuuMass                  ->GetXaxis()->SetTitle ("[GeV/c2]")                  ;
   // trueZuuMass                  ->GetYaxis()->SetTitle ("Events")                    ;
+
+
    H1_muon_eta                  ->GetXaxis()->SetTitle ("muon Eta")                  ;
    H1_muon_eta                  ->GetYaxis()->SetTitle ("Events")                    ;                      
    H1_muon_phi                  ->GetXaxis()->SetTitle ("muons phi[rad]")            ;
@@ -2581,8 +2930,8 @@ TbZTopAnalyzer::endJob()
    top_pt                       ->GetYaxis()->SetTitle ("Events")                    ;
    jet_pt                       ->GetXaxis()->SetTitle ("jets pt [GeV/c]")           ;
    jet_pt                       ->GetYaxis()->SetTitle ("Events")                    ;
-   bjet_pt                      ->GetXaxis()->SetTitle ("bJets pt [GeV/c]")          ;
-   bjet_pt                      ->GetYaxis()->SetTitle ("Events")                    ;
+   //bjet_pt                      ->GetXaxis()->SetTitle ("bJets pt [GeV/c]")          ;
+  // bjet_pt                      ->GetYaxis()->SetTitle ("Events")                    ;
    top_mT                       ->GetXaxis()->SetTitle ("[GeV/c2]")                  ;
    top_mT                       ->GetYaxis()->SetTitle ("Events")                    ;
    top_m                        ->GetXaxis()->SetTitle ("[GeV/c2]")                  ;
@@ -2637,10 +2986,12 @@ TbZTopAnalyzer::endJob()
    // pT_Z_ee                      ->GetYaxis()->SetTitle ("Events")                 ;
    z_ee_dphi                    ->GetXaxis()->SetTitle ("[rad]")                     ;
    z_ee_dphi                    ->GetYaxis()->SetTitle ("Events")                    ;
+
   // dphi_enu_true                ->GetXaxis()->SetTitle ("[rad]")                     ;
    //dphi_enu_true                ->GetYaxis()->SetTitle ("Events")                    ;
    //dphi_muNu_true               ->GetXaxis()->SetTitle ("[rad]")                     ;
    //dphi_muNu_true               ->GetYaxis()->SetTitle ("Events")                    ;
+
    H1_delta_Eta_jet_muon        ->GetXaxis()->SetTitle ("[rad]")                     ;
    H1_delta_Eta_jet_muon        ->GetYaxis()->SetTitle ("Events")                    ;
    H1_delta_Phi_jet_muon        ->GetXaxis()->SetTitle ("[rad]")                     ;
@@ -2664,10 +3015,10 @@ TbZTopAnalyzer::endJob()
    //---07-02-14---
    H1_pT_Zee                    ->GetXaxis()->SetTitle ("[GeV/c]")                   ;
    H1_pT_Zee                    ->GetYaxis()->SetTitle ("Events")                    ;
-   //
+   
    //Cutflow_AllComb              ->GetXaxis()->SetTitle ("[eee][uuu][uue][eeu]")      ;
    //Cutflow_AllComb              ->GetYaxis()->SetTitle ("entries/1")                 ;
-   //
+   
    Pt_Wmuons_is3muon           ->GetXaxis()->SetTitle ("Pt_Wmu (GeV/c) [uuu]")       ;
    Pt_Wmuons_is3muon           ->GetYaxis()->SetTitle ("Entries/ 5 GeV")             ;
    Pt_Welectrons_is3elec       ->GetXaxis()->SetTitle ("Pt_Wele (GeV/c)[eee]")       ;
@@ -2750,8 +3101,11 @@ TbZTopAnalyzer::endJob()
    //
    w_pt_is2elec1muon           ->GetXaxis()->SetTitle ("Pt_W(GeV)[eeu]")             ;
    w_pt_is2elec1muon           ->GetYaxis()->SetTitle ("entries/5 GeV")              ;
-   w_pt_is2muon1elec           ->GetXaxis()->SetTitle ("Pt_W(GeV)[uue]")             ;
-   w_pt_is2muon1elec           ->GetYaxis()->SetTitle ("entries/5 GeV")              ;
+
+   //w_pt_is2muon1elec           ->GetXaxis()->SetTitle ("Pt_W(GeV)[uue]")             ;
+  // w_pt_is2muon1elec           ->GetYaxis()->SetTitle ("entries/5 GeV")              ;
+
+
    w_pt_is3muon                ->GetXaxis()->SetTitle ("Pt_W(GeV)[uuu]")             ;
    w_pt_is3muon                ->GetYaxis()->SetTitle ("entries/5 GeV")              ;
    wenu_pt_is3elec             ->GetXaxis()->SetTitle ("Pt_W(GeV)[eee]")             ;
@@ -2831,16 +3185,18 @@ TbZTopAnalyzer::endJob()
     top_ptE_is2muon1elec   ->GetYaxis()->SetTitle ("Entries/10 GeV")             ;
     top_pt_is2elec1muon    ->GetXaxis()->SetTitle ("Pt_top(GeV)[eeu]")           ;
     top_pt_is2elec1muon    ->GetYaxis()->SetTitle ("Entries/10 GeV")             ;
+
     //-----
     // MET_After_is3muon      ->GetXaxis()->SetTitle ("MET_Ater_is3uuu")         ;
     // MET_After_is3muon      ->GetYaxis()->SetTitle ("Entries/5 GeV")           ;
     // MET_After_is3elec      ->GetXaxis()->SetTitle ("MET_After_is3eee")        ;
     // MET_After_is3elec      ->GetYaxis()->SetTitle ("Entries/5 GeV")           ;
     //--------
+
+
     w_mT_New                         ->GetXaxis()->SetTitle ("[GeV/c2]")         ;
     w_mT_New                         ->GetYaxis()->SetTitle ("Events")           ;    
     
-    //--------
     }  
 
 // ------------ method called when starting to processes a run  ------------
