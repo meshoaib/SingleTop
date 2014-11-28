@@ -4,4 +4,4 @@ scram build clean
 scram build -j 10 USER_CXXFLAGS='-g' 
 ---------------------------------------
 
-cmsRun after these two commands, it will print error line
+cmsRun xyz_cfg.py  after these two commands, it will print error line number.
