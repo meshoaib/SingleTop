@@ -752,6 +752,7 @@ if(doPileup_)
             muon_phi=myMuon->phi()                                              ;
             
             delta_Eta_jet_muon=jets_eta-muon_eta                                ;
+	    cout<<" delta_Eta_jet_muon: " <<delta_Eta_jet_muon<<endl;
             //delta_Phi_jet_muon=jets_phi-muon_phi                                ;
             delta_Phi_jet_muon= deltaPhi(jets_phi,muon_phi)                       ;
             H1_muon_eta          -> Fill( muon_eta,MyWeight)                             ;
@@ -770,10 +771,11 @@ if(doPileup_)
          if(delta_R_jet_muon < 0.5)    continue                                           ;
          
     
-    }
+    }//---end of for-loop on non-bjet container and separartion of electrons from jets ----
+ 
 
-   // cout<<"Jet_in_an_event: "<<njets<<endl    ;
-  //  H1_jets_multi->Fill(njets,MyWeight)       ;
+   // cout<<"Jet_in_an_event: "<<njets<<endl                  ;
+  //  H1_jets_multi->Fill(njets,MyWeight)                     ;
     
      trueElec1.Clear()                                        ;
      trueElec2.Clear()                                        ;
@@ -785,11 +787,57 @@ if(doPileup_)
       // const reco::BeamSpot &beamspot = *bsHandle.product() ;
       edm::Handle<reco::ConversionCollection> hConversions    ;
       iEvent.getByLabel("allConversions", hConversions)       ;
-      
+
+
+         double MuonEta_Prodcr      = 1000                    ;
+         double MuonPhi_Prodcr      = 1000                    ;
+         double deltaPhi_ElecMu     = 1000                    ;
+         double deltaEta_ElecMu     = 1000                    ;
+         double deltaR_ElecMu       = 0.                    ;
+	double elec_eta_New         = -100. ;
+	double elec_phi_New         = -100. ;
+
+
          for(unsigned  ni=0;  ni< nele ; ++ni)
          {      
             
         edm::Ptr<pat::Electron>  myElectron(&myelectron_new,ni)                      ;
+ 
+
+	elec_eta_New =myElectron->eta()                                                    ;
+        cout<<"elec_eta_New: "<<elec_eta_New<<endl;
+        elec_phi_New=myElectron->phi()                                                     ;
+	cout<< "elec_phi_New: "<<elec_phi_New<<endl;
+
+	// --------------- Overlap removing ------- 131214 -----------------------------
+	 for(unsigned int mi=0;mi < muonColl->size(); ++mi)
+         {
+
+         edm::Ptr<pat::Muon> myMuonPtr(muonColl,mi)                                     ;
+
+	 MuonEta_Prodcr = myMuonPtr->eta()                                              ;
+         MuonPhi_Prodcr = myMuonPtr->phi()                                              ;
+         deltaEta_ElecMu = elec_eta_New - MuonEta_Prodcr                                    ;
+	cout<<" deltaEta_ElecMu: "<<deltaEta_ElecMu<<endl;
+         deltaPhi_ElecMu = deltaPhi(elec_phi_New,MuonPhi_Prodcr)                            ;
+	cout<<"deltaPhi_ElecMu: "<<deltaPhi_ElecMu<<endl;
+	
+	 deltaR_ElecMu    =  sqrt(( deltaEta_ElecMu)*(deltaEta_ElecMu)
+                                             +( deltaPhi_ElecMu)*(deltaPhi_ElecMu))     ;
+ 	cout<<"deltaR_ElecMu: "<<deltaR_ElecMu<<endl;
+           H1_deltaR_ElecMu ->Fill(deltaR_ElecMu)                                       ;
+
+           if(deltaR_ElecMu < 0.1) break                                                ;  //0.3 before
+
+               }
+
+            if(deltaR_ElecMu < 0.3) continue             				; //we were testing with 0.1
+	cout<<"deltaR_ElecMu_Cut: " <<deltaR_ElecMu<<endl;
+            deltaR_ElecMu_Cut ->Fill(deltaR_ElecMu)      				;
+
+	//------- End of overlap removal -------------------------------------------------
+
+
               
         var0          =  myElectron -> pfIsolationVariables().chargedHadronIso       ;
         NeutralHadIso =  myElectron -> pfIsolationVariables().neutralHadronIso       ;
@@ -849,7 +897,7 @@ if(doPileup_)
           cout<<ElecPat->size() <<" new size : "<< m_preSel_Electrons.size()<<endl        ;
           //=============================================================================        
          
-  } // end of for-loop ......
+  } // end of electrons for-loop ......
   
         //=================================================================================
           vector<NamedCompositeCandidate > dielectron_cand                                           ;
@@ -2429,10 +2477,12 @@ H1_NoIsoElec_Pt = fs1->make<TH1D> ("H1_NoIsoElec_Pt","H1_NoIsoElec_Pt",100,0.,20
  // tree_ = fs1->make<TTree>("AnaTree", "AnaTree")  ;
   //createMiniEventTree(tree_,ev_)                 ;
 //-----------
-
-
+ H1_deltaR_ElecMu            = fs1->make<TH1D> ("H1_deltaR_ElecMu","H1_deltaR_ElecMu",50, 0, 5) ;
+deltaR_ElecMu_Cut           = fs1 ->make<TH1D> ("deltaR_ElecMu_Cut","deltaR_ElecMu_Cut",50,0,5)  ;
 
 //h_bJetsEta ->Sumw2() ;
+H1_deltaR_ElecMu ->Sumw2()   ;
+deltaR_ElecMu_Cut  ->Sumw2() ;
 //-----------
 RWTInTime_ ->Sumw2() ;
 RWTTrue_   ->Sumw2() ;
