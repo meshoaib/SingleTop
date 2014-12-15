@@ -1127,7 +1127,9 @@ if(doPileup_)
          double sumPUPt            =   myMuon->pfIsolationR04().sumPUPt                                          ;
          double Iso = (ChargedHadronPt +  max(0. , sumNeutralHadronEt + sumPhotonEt - 0.5*sumPUPt))/myMuon->pt() ;
          cout<< "Muon_Isolation_Analyszer: "<< Iso <<endl                                                        ;
-         
+	 if(Iso > 0.12) continue                                    ;
+	 cout<<"tight_Muon_Iso_afterCut: "<< Iso <<endl             ;
+
          SumofpT_All_Muons += myMuon->pt()                          ;
          MuonsPt = myMuon->pt()                                     ;
          mu_pt->Fill( MuonsPt)                                      ;      
@@ -1142,7 +1144,7 @@ if(doPileup_)
         iso                     = ecalIso + hcalIso + trackIso      ;
         relIso                  = iso/myMuon->pt()                  ; 
         relIso_H1               ->Fill(relIso,MyWeight)             ;
-        if(relIso > .20)          continue                          ; 
+        if(relIso > .2)          continue                          ; 
         
         cout << "Muon_Isolation *********:" <<trackIso <<endl       ;       
 
@@ -1158,7 +1160,7 @@ if(doPileup_)
          Number_tightMuons_Anlyzr  ->Fill(m_preSel_muon.size())     ;
          //---
          
-      }//end of muon for loop 
+      }//-------end of muon for loop ------
                              
        vector<reco::NamedCompositeCandidate > dimuon_cand                                ;
        pair <int, int> minM_pairIndex                                                    ;
@@ -1230,14 +1232,24 @@ if(doPileup_)
        
          if( mi ==  minM_pairIndex.first || mi ==  minM_pairIndex.second ) continue  ; 
          if(met->pt()< metPtCut_)                                          continue  ;
-         if(relIso > .20)                                                  continue  ;
+         // if(relIso > .20)                                                  continue  ;
 	cout<<"relIso: "<<relIso<<endl;
        //=========================================================
        cout<<"muon coll size : "<<muonCollSize<< "  mi "                             ;
        cout<< mi<< "  first : "<<  minM_pairIndex.first<<" sec : "                   ;
        cout<<  minM_pairIndex.second <<endl                                          ; 
        //=========================================================                        
-       edm::Ptr<pat::Muon> myMuon( muonColl,mi)                                      ; 
+         edm::Ptr<pat::Muon> myMuon( muonColl,mi)                                      ; 
+
+	 double ChargedHadronPt1    =   myMuon->pfIsolationR04().sumChargedHadronPt                               ;
+         double sumNeutralHadronEt1 =   myMuon->pfIsolationR04().sumNeutralHadronEt                               ;
+         double sumPhotonEt1        =   myMuon->pfIsolationR04().sumPhotonEt                                      ;
+         double sumPUPt1            =   myMuon->pfIsolationR04().sumPUPt                                          ;
+         double NewIso = (ChargedHadronPt1+  max(0. , sumNeutralHadronEt1 + sumPhotonEt1 - 0.5*sumPUPt1))/myMuon->pt() ;
+         cout<< "Muon_Isolation_Analyszer: "<< NewIso <<endl                                                        ;
+         if(NewIso > 0.12) continue                                    ;
+         cout<<"tight_Muon_Iso_afterCut: "<< NewIso <<endl             ;
+
        // reco::PFCandidate
        // edm::Ptr<reco::PFCandidate> myMuon( muonColl,mi)                           ;
        //=========================================================                 
