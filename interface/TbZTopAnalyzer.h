@@ -142,8 +142,10 @@
 
 #include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
 #include "DataFormats/MuonReco/interface/Muon.h"
-
-
+//-----------------------
+#include "MyAnalysis/TbZ/interface/MiniEvent.h"
+//-----------------------
+#include "DataFormats/Math/interface/deltaPhi.h"
 using namespace std;
 using namespace edm;
 using namespace reco;
@@ -187,8 +189,11 @@ class TbZTopAnalyzer : public edm::EDAnalyzer {
    //----apply trigger
   // bool applyTrigger_                                ;
    //-----
-   bool realdata_ ;
-   bool doPileup_ ;
+   bool realdata_                                      ;
+   bool doPileup_                                      ;
+   double ElecEtaCut_                                  ;
+   double muonPtCut_                                   ;
+   double muonEtaCut_                                  ;
    //-----
    // edm::InputTag rho_ ;
    edm::InputTag               conversionsInputTag_    ;
@@ -285,8 +290,8 @@ class TbZTopAnalyzer : public edm::EDAnalyzer {
    TH1D*    w_b_angle_2nd                             ;
    TH1D*    lep_nu_angle                              ;
    TH1D*    z_lep_dphi                                ;
-   TH1D*    bjet_pt                                   ;
-   TH1D*    bjet_desc                                 ; 
+  // TH1D*    bjet_pt                                   ;
+  // TH1D*    bjet_desc                                 ; 
    TH1D*    top_pt                                    ; 
    TH1D*    jet_pt                                    ;
    TH1D*    bjet_mult                                 ;
@@ -339,7 +344,7 @@ class TbZTopAnalyzer : public edm::EDAnalyzer {
    TH1D*    w_b_angle_2nd_is3muon                     ;
       //---is2muon1elec---------
    TH1D*    wenu_m_is2muon1elec                       ;
-   TH1D*    w_pt_is2muon1elec                         ;
+   //TH1D*    w_pt_is2muon1elec                         ;
    TH1D*    wb_angle_is2muon1elec                     ;
    TH1D*    top_mTE_is2muon1elec                      ;
    TH1D*    top_mE_is2muon1elec                       ;
@@ -600,16 +605,31 @@ TH1D*  H1_jetsPhi_is1muon2elec  ;
 TH1D*  H1_jetsEta_is1muon2elec  ;
 TH1D*  H1_jetsPt_is1muon2elec   ;
 //----09-09-14-------------------
-TH1D* TNPUTrue_ ;
-TH1D* TNPUInTime_  ;
-TH1D* TNVTX_ ;
-TH1D*  RWTTrue_ ;
-TH1D*   RWTInTime_ ;
-TH1D* WGT_  ;
-TH1D* WeightVsNint_ ;
+TH1D* TNPUTrue_             ;
+TH1D* TNPUInTime_           ;
+TH1D* TNVTX_                ;
+TH1D*  RWTTrue_             ;
+TH1D*   RWTInTime_          ;
+TH1D* WGT_                  ;
+TH1D* WeightVsNint_         ;
 //----
-TH1D* h_bJetsEta ;
+TH1D* h_bJetsEta            ;
 
-//----------------------
+TH1D* H1_NoIsoElec_Pt       ;
+TH1D* H1_IsoElec_Pt         ;
+//--- 23-09-14 -------------------
+
+TTree *tree_                ;
+MiniEvent_t ev_             ;
+//--overlap histo ----
+TH1D* H1_deltaR_ElecMu          ;
+TH1D* deltaR_ElecMu_Cut         ;
+
+//TH1D* top_ptE_2nd_is2muon1elec  ;
+//TH1D* top_ptE__2nd_is3elec      ;
+//TH1D* top_pt_2nd_is3muon        ;
+
+//TH1D* H1_elec_eta           ;
+//TH1D* H1_elec_phi           ;
     };
     
