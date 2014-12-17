@@ -48,7 +48,7 @@ TbZTopAnalyzer::TbZTopAnalyzer(const edm::ParameterSet& iConfig):m_triggerCache(
 
    //now do what ever initialization is needed
    
-      metPtCut_           = iConfig.getParameter<double>("metPtCut")              ;
+    metPtCut_           = iConfig.getParameter<double>("metPtCut")              ;
    
     BtagPtCut_          = iConfig.getParameter<double>("BtagPtCut")             ;
     BtagEtaCut_         = iConfig.getParameter<double>("BtagEtaCut")            ;
@@ -62,6 +62,9 @@ TbZTopAnalyzer::TbZTopAnalyzer(const edm::ParameterSet& iConfig):m_triggerCache(
    JetsPtCut_          = iConfig.getParameter<double>("JetsPtCut")                ;
    JetsEtaCut_         = iConfig.getParameter<double>("JetsEtaCut")               ;
    ElecPtCut_          = iConfig.getParameter<double>("ElecPtCut")                ;
+   ElecEtaCut_         = iConfig.getParameter<double>("ElecEtaCut")               ;	
+   muonPtCut_         = iConfig.getParameter<double>("muonPtCut")                 ;
+   muonEtaCut_        = iConfig.getParameter<double>("muonEtaCut")                ;   
    //------------------------------------------------------------------------------------------------
     doPileup_	 = iConfig.getParameter<bool>("doPileup")               ;
    //------------------------------------------------------------------------------------------------
@@ -284,10 +287,10 @@ if(doPileup_)
 //double NEvents = 0  ;
 
  //-------------------------------------------------------------------------
-	if( tqZDoublMu == true && tqZDoublEE == false)
+//	if( tqZDoublMu == true && tqZDoublEE == false)
 //	if (tqZMuEG == true && tqZDoublMu == false && tqZDoublEE == false)
 	//if(tqZDoublEE == true && tqZDoublMu == false)	
-	{
+//	{
 
 	NEvents++                                         ; 
         H1_NEvents ->Fill( NEvents)                       ;
@@ -348,7 +351,7 @@ if(doPileup_)
         // ev_.l_eta     = muonColl->Pta();
        //  ev_.l_phi     = muonColl->phi();
    // --------------------------------------------------
-
+  //cout<<"deltaBeta_Correction: "<<muonColl.dB()<<endl  ;
   cout<<"Muons_Size: " << muonColl->size() <<endl       ;
   //cout<<"Muons_size_NoIso: "<< muonNoIso->size()<<endl  ;	
 
@@ -691,17 +694,42 @@ if(doPileup_)
       HT_AllJets->Fill(SumpT_AllJets,MyWeight)                          ;
       
       // njets++                                                        ;
+	double var0                   = 0.       ; 
+	double NeutralHadIso          = 0.       ;
+	double photonIso              = 0.       ;
+	double ele_pt_new             = 0.       ;
+	double relIso_chargedHad      = 100.     ;
+
           
          for(unsigned  ni=0;  ni< nele ; ++ni)
          {            
-            edm::Ptr<pat::Electron> myElectron(&myelectron_new,ni)              ;
-            if(met->pt()< metPtCut_) continue                                   ;
+            edm::Ptr<pat::Electron> myElectron(&myelectron_new,ni)                        ;
+
+            if(met->pt()< metPtCut_)              continue                      ;
+	    if(myElectron->pt() < ElecPtCut_)     continue                      ;
+	    if(myElectron->eta()> ElecEtaCut_)    continue                      ;	
+
+	    double RhoCorrectedIso = myElectron->userFloat("RhoCorrectedIso")   ;
+	    double VertexDxy       = myElectron->userFloat("VertexDxy")         ;
+
+	    cout<<" RhoCorrectedIso_171214: " <<RhoCorrectedIso<<endl           ;
+	    cout<<" VertexDxy_Elec_171214: "<<VertexDxy<<endl                   ;
             //==========================================================                                                                     
             cout<<"Pt   : "<<setw(12)<<myElectron->pt()  <<setw(12)<<ni<<endl   ;
             cout<<"Eta  : "<<setw(12)<<myElectron->eta() <<setw(12)<<ni<<endl   ;
             cout<<"Phi  : "<<setw(12)<<myElectron->phi() <<setw(12)<<ni<<endl   ;
-            //==========================================================
-            
+            //================ISO ELEC==========================================
+            var0          =  myElectron -> pfIsolationVariables().chargedHadronIso        ;
+            NeutralHadIso =  myElectron -> pfIsolationVariables().neutralHadronIso        ;
+            photonIso     =  myElectron -> pfIsolationVariables().photonIso               ;
+            ele_pt_new    =  myElectron -> pt()                                           ;
+
+	    relIso_chargedHad    = (var0 + NeutralHadIso + photonIso) /ele_pt_new               ;
+
+            cout<<"relIso_chargedHad: "<<relIso_chargedHad <<endl               ;
+
+	    if(relIso_chargedHad > 0.1) continue                                ;
+ 
             elec_eta1              =  myElectron->eta()                         ;
             elec_phi1              =  myElectron->phi()                         ;
             H1_elec_eta           -> Fill( elec_eta1,MyWeight)                  ;
@@ -730,7 +758,15 @@ if(doPileup_)
          {
             edm::Ptr<pat::Muon> myMuon(muonColl,mi)                         ;
 
-
+	   cout<<"deltaBeta_Correction: "<<myMuon->dB()<<endl  ;
+	   double VertexDz  = myMuon->userFloat("VertexDz")    ;
+	  // double RhoCorrectedIso = myMuon->userFloat("RhoCorrectedIso")     ;
+	   double DeltaCorrectedIso = myMuon->userFloat("DeltaCorrectedIso") ;
+	   double VertexDxy          = myMuon->userFloat("VertexDxy")        ;
+	   cout<<"VertexDxy_New_161214: "<<VertexDxy<<endl                   ;
+	   cout<<"DeltaCorrectedIso_New_161214: "<<DeltaCorrectedIso<<endl   ;
+	   ///cout<<"RhoCorrectedIso_New_161214: "<<RhoCorrectedIso<<endl       ;
+	   cout<<"VertexDz_New_161214: " <<VertexDz<<endl                    ;
    // --------------------------------------------------
        //  ev_.l_charge  = myMuon->charge();
        //  ev_.l_pt      = myMuon->pt();
@@ -739,8 +775,10 @@ if(doPileup_)
 	 //tree_    ->Fill();
    // --------------------------------------------------
 
-            if(met->pt()< metPtCut_) continue                                   ;
-            
+            if(met->pt()< metPtCut_)          continue                          ;
+	    if(myMuon->pt() < muonPtCut_)     continue                          ;
+	    if(myMuon->eta() > muonEtaCut_)   continue                          ;
+
             const pat::Muon mu = *myMuon                                        ;
             muon::isLooseMuon(mu)                                               ;
             
@@ -793,21 +831,41 @@ if(doPileup_)
          double MuonPhi_Prodcr      = 1000                    ;
          double deltaPhi_ElecMu     = 1000                    ;
          double deltaEta_ElecMu     = 1000                    ;
-         double deltaR_ElecMu       = 0.                    ;
-	double elec_eta_New         = -100. ;
-	double elec_phi_New         = -100. ;
+         double deltaR_ElecMu       = 1000.                   ;
+         double elec_eta_New         = -100.                  ;
+	 double elec_phi_New         = -100.                  ;
+	 
+	 double var1                   = 0.       ;
+         double NeutralHadIso1          = 0.       ;
+         double photonIso1              = 0.       ;
+         double ele_pt_new1             = 0.       ;
+         double relIso_chargedHad1      = 100.     ;
 
 
          for(unsigned  ni=0;  ni< nele ; ++ni)
          {      
-            
-        edm::Ptr<pat::Electron>  myElectron(&myelectron_new,ni)                      ;
- 
+      //     cout<<"Electrons_for_overlap: "<<endl; 
 
-	elec_eta_New =myElectron->eta()                                                    ;
-        cout<<"elec_eta_New: "<<elec_eta_New<<endl;
-        elec_phi_New=myElectron->phi()                                                     ;
-	cout<< "elec_phi_New: "<<elec_phi_New<<endl;
+        edm::Ptr<pat::Electron>  myElectron(&myelectron_new,ni)                       ;
+        if(myElectron->pt() < ElecPtCut_)     continue                                ;
+        if(myElectron->eta()> ElecEtaCut_)    continue                                ;
+	
+        var1          =  myElectron -> pfIsolationVariables().chargedHadronIso        ;
+        NeutralHadIso1 =  myElectron -> pfIsolationVariables().neutralHadronIso       ;
+        photonIso1     =  myElectron -> pfIsolationVariables().photonIso              ;
+        ele_pt_new1    =  myElectron -> pt()                                          ;
+
+        relIso_chargedHad1    = (var1 + NeutralHadIso1 + photonIso1) /ele_pt_new1     ;
+
+        cout<<"relIso_chargedHad1 "<<relIso_chargedHad1 <<endl ;
+
+            if(relIso_chargedHad1 > 0.1) continue                                    ;
+
+
+	elec_eta_New = myElectron->eta()                                             ;
+        cout<<"elec_eta_New: "<<elec_eta_New<<endl                                   ;
+        elec_phi_New=myElectron->phi()                                               ;
+	cout<< "elec_phi_New: "<<elec_phi_New<<endl                                  ;
 
 	// --------------- Overlap removing ------- 131214 -----------------------------
 	 for(unsigned int mi=0;mi < muonColl->size(); ++mi)
@@ -815,25 +873,28 @@ if(doPileup_)
 
          edm::Ptr<pat::Muon> myMuonPtr(muonColl,mi)                                     ;
 
+         if(myMuonPtr ->pt() < muonPtCut_)     continue                                 ;
+         if(myMuonPtr ->eta() > muonEtaCut_)   continue                                 ;
+
 	 MuonEta_Prodcr = myMuonPtr->eta()                                              ;
          MuonPhi_Prodcr = myMuonPtr->phi()                                              ;
-         deltaEta_ElecMu = elec_eta_New - MuonEta_Prodcr                                    ;
-	cout<<" deltaEta_ElecMu: "<<deltaEta_ElecMu<<endl;
-         deltaPhi_ElecMu = deltaPhi(elec_phi_New,MuonPhi_Prodcr)                            ;
-	cout<<"deltaPhi_ElecMu: "<<deltaPhi_ElecMu<<endl;
+         deltaEta_ElecMu = elec_eta_New - MuonEta_Prodcr                                ;
+	cout<<" deltaEta_ElecMu: "<<deltaEta_ElecMu<<endl                               ;
+         deltaPhi_ElecMu = deltaPhi(elec_phi_New,MuonPhi_Prodcr)                        ;
+	cout<<"deltaPhi_ElecMu: "<<deltaPhi_ElecMu<<endl                                ;
 	
 	 deltaR_ElecMu    =  sqrt(( deltaEta_ElecMu)*(deltaEta_ElecMu)
                                              +( deltaPhi_ElecMu)*(deltaPhi_ElecMu))     ;
- 	cout<<"deltaR_ElecMu: "<<deltaR_ElecMu<<endl;
+ 	cout<<"deltaR_ElecMu: "<<deltaR_ElecMu<<endl                                    ;
            H1_deltaR_ElecMu ->Fill(deltaR_ElecMu)                                       ;
 
            if(deltaR_ElecMu < 0.1) break                                                ;  //0.3 before
 
                }
 
-            if(deltaR_ElecMu < 0.3) continue             				; //we were testing with 0.1
-	cout<<"deltaR_ElecMu_Cut: " <<deltaR_ElecMu<<endl;
-            deltaR_ElecMu_Cut ->Fill(deltaR_ElecMu)      				;
+         if(deltaR_ElecMu < 0.3) continue             				; //we were testing with 0.1
+	cout<<"deltaR_ElecMu_Cut: " <<deltaR_ElecMu<<endl                               ;
+        deltaR_ElecMu_Cut ->Fill(deltaR_ElecMu)      				        ;
 
 	//------- End of overlap removal -------------------------------------------------
 
@@ -870,9 +931,11 @@ if(doPileup_)
            
            ElecPt = myElectron->pt()                                                      ;
            elect_pt->Fill( ElecPt,MyWeight)                                               ;
-           elec_eta =myElectron->eta()                                                    ;
-	  cout<<"elec_eta: "<<elec_eta<<endl;
+           elec_eta = myElectron->eta()                                                   ;
+	   //H1_elec_eta -> Fill(elec_eta,MyWeight)                                         ;
+	  cout<<"elec_eta: "<<elec_eta<<endl                                              ;
            elec_phi=myElectron->phi()                                                     ;
+	  //H1_elec_phi -> Fill(elec_phi,MyWeight)                                          ;
           
            float  Electron_IsopT                                                          ;
            
@@ -891,15 +954,21 @@ if(doPileup_)
           cout<<"Number of Electrons: "<<nelec<<endl                                      ; 
           
           m_preSel_Electrons.push_back(ElecPat->at(ni))                                   ; 
+        //  myElectron
+	//m_preSel_Electrons.push_back(&myElectron)                                   ;
           
           //=============================================================================
-          cout<<"retrieved preselected electrons with size INSIDE TOP Analyser"           ;
-          cout<<ElecPat->size() <<" new size : "<< m_preSel_Electrons.size()<<endl        ;
+         // cout<<"retrieved preselected electrons with size INSIDE TOP Analyser"           ;
+          cout<<ElecPat->size() <<" size_m_preSel_Electrons : "<< m_preSel_Electrons.size()<<endl        ; 
           //=============================================================================        
          
   } // end of electrons for-loop ......
   
-        //=================================================================================
+	 //=============================================================================
+	  cout<<"retrieved preselected electrons with size INSIDE TOP Analyser: "                      ;
+	  cout<<ElecPat->size() <<" new size : "<< m_preSel_Electrons.size()<<endl                   ;
+	
+ 	 //=================================================================================
           vector<NamedCompositeCandidate > dielectron_cand                                           ;
           pair <int, int> minE_pairIndex                                                             ;
           vector<double> el_sfos_masses(0.)                                                          ;                           
@@ -931,6 +1000,7 @@ if(doPileup_)
             eta_Z_ee     = dielectron_cand.at(ee).eta()                                              ;                     
             eta_Zee_H1   ->Fill(eta_Z_ee,MyWeight)                                                   ;
 	    if(ELECCTRON_MSS >= 60 && ELECCTRON_MSS < 120 ) is2elec=true                             ;
+	    cout<<" is2elec: "<<is2elec<<endl;
             count2elec ++                                                                            ;
          //===================================================================================   
             cout <<"Twoelectron_counter: "<<count2elec<<endl                                         ;
@@ -968,16 +1038,26 @@ if(doPileup_)
 
 	  }	//end of for-loop Non-Iso electrons
 // -----------------------------------------------------------------------------------------
+	//cout<<"Hiiiiiiiiiiiiiii_afterZ: "<<endl;
+	double var2                    = 0.       ;
+        double NeutralHadIso2          = 0.       ;
+        double photonIso2              = 0.       ;
+        double ele_pt_new2             = 0.       ;
+        double relIso_chargedHad2      = 100.     ;
+
       for(unsigned int  mi=0;  mi< nele;  ++mi)
       {
-      
-         if(met->pt()< metPtCut_)     continue                                                    ;
+      	 //cout<<"Hiiiiiiiiiiiiiii_afterZ_insidFor: "<<endl;
+         if(met->pt()< metPtCut_)              continue                                           ;
+	 //if(myElectron->pt() < ElecPtCut_)     continue                                           ;
+         //if(myElectron->eta()> ElecEtaCut_)    continue                                           ;
+
          // if(relIso_elec >0.20)        continue                                                 ;
-         
+     	 cout<<"Hiiiiii_after_METCut: "<<endl;    
          //====================================================================================
          if( mi ==  (unsigned) minE_pairIndex.first || mi == (unsigned) minE_pairIndex.second ) continue;
          //=====================================================================================
-         
+    	 cout<<"Hiiiii_After_rejecting_Index: "<<endl;     
          cout<<"(3)-----------is1elec = "<<is1elec<<endl          ;
          cout<<"Electron coll size : "                            ;
          cout<<nele<< "mi "                                       ;
@@ -986,6 +1066,61 @@ if(doPileup_)
          
          //=======================================================  
          edm::Ptr<pat::Electron> myElectron(ElecPat,mi)                                ;
+	if(myElectron->pt() < ElecPtCut_)     continue                                 ;
+        if(myElectron->eta()> ElecEtaCut_)    continue                                 ;
+
+	var2          =  myElectron -> pfIsolationVariables().chargedHadronIso        ;
+        NeutralHadIso2 =  myElectron -> pfIsolationVariables().neutralHadronIso       ;
+        photonIso2     =  myElectron -> pfIsolationVariables().photonIso              ;
+        ele_pt_new2    =  myElectron -> pt()                                          ;
+
+        relIso_chargedHad2    = (var2 + NeutralHadIso2 + photonIso2) /ele_pt_new2     ;
+
+        cout<<"relIso_chargedHad2 "<<relIso_chargedHad2 <<endl ;
+
+            if(relIso_chargedHad2 > 0.1) continue                                    ;
+
+	//----------overlap removal ------------------------------
+	
+	double MuonEta_Prodcr1   = -100 ;
+	double MuonPhi_Prodcr1   = -100 ;
+	double  deltaEta_ElecMu1 = -100 ;
+	//double  deltaEta_ElecMu1 = -100 ;
+	double deltaPhi_ElecMu1  = -100 ;
+	double deltaR_ElecMu1    = -100 ;
+
+	double elec_eta_New1 = myElectron->eta();
+	double elec_phi_New1 = myElectron->phi();
+	 for(unsigned int mi=0;mi < muonColl->size(); ++mi)
+         {
+
+         edm::Ptr<pat::Muon> myMuonPtr(muonColl,mi)                                     ;
+
+         if(myMuonPtr ->pt() < muonPtCut_)     continue                                 ;
+         if(myMuonPtr ->eta() > muonEtaCut_)   continue                                 ;
+
+         MuonEta_Prodcr1 = myMuonPtr->eta()                                              ;
+         MuonPhi_Prodcr1 = myMuonPtr->phi()                                              ;
+         deltaEta_ElecMu1 = elec_eta_New1 - MuonEta_Prodcr1                              ;
+        cout<<" deltaEta_ElecMu: "<<deltaEta_ElecMu1<<endl                               ;
+         deltaPhi_ElecMu1 = deltaPhi(elec_phi_New1,MuonPhi_Prodcr1)                      ;
+        cout<<"deltaPhi_ElecMu: "<<deltaPhi_ElecMu1<<endl                                ;
+
+         deltaR_ElecMu1    =  sqrt(( deltaEta_ElecMu1)*(deltaEta_ElecMu1)
+                                             +( deltaPhi_ElecMu1)*(deltaPhi_ElecMu1))     ;
+        cout<<"deltaR_ElecMu1: "<<deltaR_ElecMu1<<endl                                    ;
+         //  H1_deltaR_ElecMu ->Fill(deltaR_ElecMu)                                       ;
+
+           ///if(deltaR_ElecMu1 < 0.1) break                                                ;  //0.3 before
+
+               }
+
+         //  if(deltaR_ElecMu1 < 0.3) continue                                             ; //we were testing with 0.1
+           cout<<"deltaR_ElecMu1_Cut: " <<deltaR_ElecMu1<<endl;
+           //deltaR_ElecMu_Cut ->Fill(deltaR_ElecMu)                                      ;
+
+        //------- End of overlap removal -----------------------------------------------
+
          //=======================================================
          // e_dphi               = tbz_met_elec.Phi()- tbz_el.Phi()                    ;
         // e_dphi1              = met->phi()- myElectron->phi()                        ;
@@ -1020,6 +1155,7 @@ if(doPileup_)
 
          }       
          //--------08-05-14----
+         cout<<"Hello_Before_wRecon_if"<<endl;
           if(abs(e_dphi1) > DPhi_ENue_  && myElectron->pt() > 20.  /* && met->pt() > 30.&& nbtagjets!=0 */ )
          {
          e_mWT2               = sqrt(2.*mMet* myElectron->pt()* (1.-cos(e_dphi1)) )     ;         
@@ -1030,10 +1166,13 @@ if(doPileup_)
          cout<<"  Wenu_Mt : "<< e_mWT2                                                  ;                                              
          cout<< " cal met : "<< mMet<<" met->pt : "<<met->pt()  <<endl                  ;              
          //==========================================================================
+        cout<<"Hello_Inside_wRecon_if"<<endl;
          if(e_mWT2 > 0.)
 		{
          isWe_New = true                                                                ;
-         wenu_mT_New->Fill(e_mWT2,MyWeight)                                             ;
+         wenu_mT_New ->Fill(e_mWT2,MyWeight)                                            ;
+	cout<<" isWe_New: "<<isWe_New<<endl;
+	cout<<" e_mWT2: "<<e_mWT2<<endl;
 	 	}
          }       
 
@@ -1118,8 +1257,12 @@ if(doPileup_)
       for(unsigned int mi=0;mi < muonColl->size(); ++mi)
       {
           edm::Ptr<pat::Muon> myMuon(muonColl,mi)              ; 
-         if(met->pt()< metPtCut_) continue                     ;
-         
+
+         if(met->pt()< metPtCut_)          continue            ;
+
+         if(myMuon->pt() < muonPtCut_)     continue            ;
+         if(myMuon->eta() > muonEtaCut_)   continue            ;
+
 
          double ChargedHadronPt    =   myMuon->pfIsolationR04().sumChargedHadronPt                               ; 
          double sumNeutralHadronEt =   myMuon->pfIsolationR04().sumNeutralHadronEt                               ;
@@ -1144,7 +1287,7 @@ if(doPileup_)
         iso                     = ecalIso + hcalIso + trackIso      ;
         relIso                  = iso/myMuon->pt()                  ; 
         relIso_H1               ->Fill(relIso,MyWeight)             ;
-        if(relIso > .2)          continue                          ; 
+        if(relIso > .12)          continue                          ; 
         
         cout << "Muon_Isolation *********:" <<trackIso <<endl       ;       
 
@@ -1239,7 +1382,11 @@ if(doPileup_)
        cout<< mi<< "  first : "<<  minM_pairIndex.first<<" sec : "                   ;
        cout<<  minM_pairIndex.second <<endl                                          ; 
        //=========================================================                        
-         edm::Ptr<pat::Muon> myMuon( muonColl,mi)                                      ; 
+       edm::Ptr<pat::Muon> myMuon( muonColl,mi)                                      ; 
+
+       if(myMuon->pt() < muonPtCut_)     continue                                    ;
+       if(myMuon->eta() > muonEtaCut_)   continue                                    ;
+
 
 	 double ChargedHadronPt1    =   myMuon->pfIsolationR04().sumChargedHadronPt                               ;
          double sumNeutralHadronEt1 =   myMuon->pfIsolationR04().sumNeutralHadronEt                               ;
@@ -1416,8 +1563,6 @@ if(doPileup_)
        delete Mez;
 
 
-
-
 	//===========================================
 	//          Fake Rate Combinations          =
 	//===========================================
@@ -1440,12 +1585,15 @@ if(doPileup_)
        //         COMBINATIONS                        =
        //==============================================
        
-
+	cout<<"nelectrns_before_3eCombination: " <<nelectrns<<endl;
+	cout<<"is2elec_before_3eCombination: "<<is2elec<<endl;
+	cout<<"isWe_New_before_3eCombination: "<<isWe_New<<endl;
        // ======================= is3elec      =====================
        if(nelectrns == 3 && is2elec && isWe_New && nmuons == 0  &&  ELECCTRON_MSS >0. && e_mWT2 > 0. /*e_mWT2 > 20.*/ && ELECCTRON_MSS >= MinZMAss_ && ELECCTRON_MSS < MaxZMass_)
        {        
        m_muonCutFlow     ->Fill(3) ; // Events after nelectrns == 3 && is2elec && isWe_New && nmuons ==0  &&  ELECCTRON_MSS >0. && e_mWT2 > 0. cut
        // ---- 170814------
+      cout<<"nelectrns_inside_3eCombination: "<<endl;
        for(unsigned int k = 0; k < nonbjetcontainer.size(); k++ )
        {
        double jetsPt_is3e = nonbjetcontainer.at(k).Pt()           ;
@@ -1523,7 +1671,10 @@ if(doPileup_)
             }                                                        
          }//for loop                                                 
          if( e_corr_top_is3elec.Mt() > 0.)                                                           
+	 {
          top_mTE_2nd_is3elec->Fill(e_corr_top_is3elec.Mt() ,MyWeight )                   ;
+	 //top_ptE__2nd_is3elec ->Fill( tbz_topE_is3elec.Pt(),MyWeight)                          ;
+	 }
          if(e_corr_top_is3elec.M()  > 0.)                                          
          top_mE_2nd_is3elec->Fill(e_corr_top_is3elec.M() ,MyWeight)                       ;
          wb_angle_2nd_is3elec->Fill(tbz_wenu_cand.DeltaPhi(e_corr_b_is3elec) ,MyWeight)   ;        
@@ -1623,7 +1774,12 @@ if(doPileup_)
             }//end of if-loop                                             
          }//for loop                                                      
          if(corr_top_is3muon.Mt() > 0.)                                                         
+	 {
          top_mT_2nd_is3muon->Fill(corr_top_is3muon.Mt() ,MyWeight)                  ;
+	// if(tbz_top_is3muon.Pt() > 0.)
+        // top_pt_2nd_is3muon ->Fill(tbz_top_is3muon.Pt(),MyWeight)           ;
+
+	 }
          if(corr_top_is3muon.M() > 0.)                                    
          top_m_2nd_is3muon->Fill(corr_top_is3muon.M() ,MyWeight)                    ;
          w_b_angle_2nd_is3muon->Fill(tbz_w_cand.DeltaPhi(corr_b_is3muon),MyWeight) ;         
@@ -1716,9 +1872,15 @@ if(doPileup_)
             }                                                        
          }//for loop           
          if( e_corr_top_is2muon1elec.Mt() > 0.)                                                           
-         top_mTE_2nd_is2muon1elec->Fill(e_corr_top_is2muon1elec.Mt()  )                   ;
+	{
+         top_mTE_2nd_is2muon1elec->Fill(e_corr_top_is2muon1elec.Mt(), MyWeight)                   ;
+	// top_ptE_2nd_is2muon1elec ->Fill(tbz_topE_is2muon1elec.Pt(),MyWeight)  ;
+	}
+
          if(e_corr_top_is2muon1elec.M()  > 0.)                                            
-         top_mE_2nd_is2muon1elec->Fill(e_corr_top_is2muon1elec.M())                       ;
+	{
+         top_mE_2nd_is2muon1elec->Fill(e_corr_top_is2muon1elec.M(),MyWeight)                       ;
+	}
          wb_angle_2nd_is2muon1elec->Fill(tbz_wenu_cand.DeltaPhi(e_corr_b_is2muon1elec),MyWeight)   ;          
       }      
       //=========is2muon1elec END ==================================
@@ -2069,7 +2231,7 @@ if(doPileup_)
      //  tree_    ->Fill(); 
   	    }// end of 3 tight leptons loop  
   
-	}// end of trigger For-Loop
+	//}// end of trigger For-Loop
 
 //	tree_    ->Fill();
  
@@ -2171,13 +2333,13 @@ TbZTopAnalyzer::beginJob()
  mu_pt                  = fs1->make<TH1D> ("pt_mu"," muon pT",100,0.,100.)                                    ;
   
   //---------------------
-  H1_delta_Eta_jet_elec  = fs1->make<TH1D> ("H1_delta_Eta_jet_elec","H1_delta_Eta_jet_elec",100.0,-3.14,3.14)   ;
-  H1_delta_Phi_jet_elec  = fs1->make<TH1D> ("H1_delta_Phi_jet_elec","H1_delta_Phi_jet_elec",100.0,-3.14,3.14)   ;
-  H1_delta_R_jet_elec    = fs1->make<TH1D> ("H1_delta_R_jet_elec  ","H1_delta_R_jet_elec  ",100.0,-3.14,10.14)  ;
-  H1_jets_phi            = fs1->make<TH1D> ("H1_jets_phi","H1_jets_phi", 100.0,-2.5,2.5)                        ;
-  H1_jets_eta            = fs1->make<TH1D> ("h1_jets_eta", "H1_jets_eta", 100,-2.5,2.5)                         ;
-  H1_elec_eta            = fs1->make<TH1D> ("H1_elec_eta", "H1_elec_eta", 100,-2.5,2.5)                         ;
-  H1_elec_phi            = fs1->make<TH1D> ("H1_elec_phi", "H1_elec_phi", 100,-2.5,2.5)                         ;
+  H1_delta_Eta_jet_elec  = fs1->make<TH1D> ("H1_delta_Eta_jet_elec","H1_delta_Eta_jet_elec",100.0,-4,4)   ;
+  H1_delta_Phi_jet_elec  = fs1->make<TH1D> ("H1_delta_Phi_jet_elec","H1_delta_Phi_jet_elec",100.0,-4,4)   ;
+  H1_delta_R_jet_elec    = fs1->make<TH1D> ("H1_delta_R_jet_elec  ","H1_delta_R_jet_elec  ",100.0,-4,4)  ;
+  H1_jets_phi            = fs1->make<TH1D> ("H1_jets_phi","H1_jets_phi", 100.0,-4,4)                        ;
+  H1_jets_eta            = fs1->make<TH1D> ("h1_jets_eta", "H1_jets_eta", 100,-4,4)                         ;
+  H1_elec_eta            = fs1->make<TH1D> ("H1_elec_eta", "H1_elec_eta", 100,-4,4)                         ;
+  H1_elec_phi            = fs1->make<TH1D> ("H1_elec_phi", "H1_elec_phi", 100,-4,4)                         ;
                                            
   H1_muon_eta            = fs1->make<TH1D> ("H1_muon_eta          ","H1_muon_eta          ",100.0,-3.14,3.14)   ;
   H1_muon_phi            = fs1->make<TH1D> ("H1_muon_phi          ","H1_muon_phi          ",100.0,-3.14,3.14)   ;
@@ -2237,7 +2399,6 @@ TbZTopAnalyzer::beginJob()
   //w_pt_is2muon1elec         = fs1->make<TH1D> ("w_pt_is2muon1elec", "w_pt_is2muon1elec", 40, 0., 200)            ;
   wenu_m_is2muon1elec       = fs1->make<TH1D> ("we_inv_M_is2muon1elec","we_inv_M_is2muon1elec",40,0.,200.)             ; 
   wb_angle_is2muon1elec     = fs1->make<TH1D> ("wb_angle_is2muon1elec","wb_angle_is2muon1elec",60,-3.,3.)               ;  
-  top_mTE_is2muon1elec      = fs1->make<TH1D> ("t_trans_M_is2muon1elec","t_trans_M_is2muon1elec",40,0.,400.)            ; 
   top_mE_is2muon1elec       = fs1->make<TH1D> ("t_Inv_M_is2muon1elec","t_Inv_M_is2muon1elec",40,0.,400.)                ;  
   top_ptE_is2muon1elec      = fs1->make<TH1D> ("pt_top_is2muon1elec","pt_top_is2muon1elec",40,0.,400.)                  ;  
   top_mTE_2nd_is2muon1elec  = fs1->make<TH1D> ("t_trans_M_2nd_is2muon1elec","t_trans_M_2nd_is2muon1elec",40,0.,400.)    ;  
@@ -2373,6 +2534,7 @@ TbZTopAnalyzer::beginJob()
   t_transM_2nd_is2mu1E_Final        = fs1->make<TH1D>("t_transM_2nd_is2mu1E_Final","t_transM_2nd_is2mu1E_Final",40, 0., 400.);
   t_invM_2nd_is2mu1E_Final          = fs1->make<TH1D>("t_invM_2nd_is2mu1E_Final","t_invM_2nd_is2mu1E_Final",40, 0., 400.);
   wb_angle_2nd_is2mu1E_Final        = fs1->make<TH1D>("wb_angle_2nd_is2mu1E_Final","wb_angle_2nd_is2mu1E_Final",60,-3.,3.);
+  top_mTE_is2muon1elec              = fs1->make<TH1D>("t_transM_is2mu1E","t_transM_is2mu1E",40, 0., 400.);
   //---2E1Mu
   MuonsPt_is1muon2elec_Final        = fs1->make<TH1D>("MuonsPt_is1muon2elec_Final","MuonsPt_is1muon2elec_Final",40,0.,200.)           ;
   ElecPt_is1muon2elec_Final         = fs1->make<TH1D>("ElecPt_is1muon2elec_Final","ElecPt_is1muon2elec_Final",40,0.,200.)             ;
@@ -2489,12 +2651,21 @@ H1_NoIsoElec_Pt = fs1->make<TH1D> ("H1_NoIsoElec_Pt","H1_NoIsoElec_Pt",100,0.,20
  // tree_ = fs1->make<TTree>("AnaTree", "AnaTree")  ;
   //createMiniEventTree(tree_,ev_)                 ;
 //-----------
- H1_deltaR_ElecMu            = fs1->make<TH1D> ("H1_deltaR_ElecMu","H1_deltaR_ElecMu",50, 0, 5) ;
-deltaR_ElecMu_Cut           = fs1 ->make<TH1D> ("deltaR_ElecMu_Cut","deltaR_ElecMu_Cut",50,0,5)  ;
+ H1_deltaR_ElecMu            = fs1->make<TH1D> ("H1_deltaR_ElecMu","H1_deltaR_ElecMu",50, 0, 5)                 ;
+deltaR_ElecMu_Cut            = fs1 ->make<TH1D> ("deltaR_ElecMu_Cut","deltaR_ElecMu_Cut",50,0,5)                ;
 
+//H1_elec_eta                  = fs1->make<TH1D> ("H1_elec_eta","H1_elec_eta", 100.0,-3,3)                      ;
+//H1_elec_phi                  = fs1->make<TH1D> ("H1_elec_phi","H1_elec_phi", 100.0,-3,3)                      ;
+
+//top_ptE_2nd_is2muon1elec     = fs1->make<TH1D>("t_pt_is2mu1E_2nd_Final","t_pt_is2mu1E_2nd_Final",40, 0., 400.)  ;
+//top_ptE_2nd_is2muon1elec     ->Sumw2() ;
 //h_bJetsEta ->Sumw2() ;
-H1_deltaR_ElecMu ->Sumw2()   ;
-deltaR_ElecMu_Cut  ->Sumw2() ;
+
+//H1_elec_eta        ->Sumw2()   ;
+//H1_elec_phi        ->Sumw2()   ;
+
+H1_deltaR_ElecMu   ->Sumw2()   ;
+deltaR_ElecMu_Cut  ->Sumw2()   ;
 //-----------
 RWTInTime_ ->Sumw2() ;
 RWTTrue_   ->Sumw2() ;
