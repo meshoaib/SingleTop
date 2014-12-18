@@ -1053,11 +1053,11 @@ if(doPileup_)
          //if(myElectron->eta()> ElecEtaCut_)    continue                                           ;
 
          // if(relIso_elec >0.20)        continue                                                 ;
-     	 cout<<"Hiiiiii_after_METCut: "<<endl;    
+     	 //cout<<"Hiiiiii_after_METCut: "<<endl;    
          //====================================================================================
          if( mi ==  (unsigned) minE_pairIndex.first || mi == (unsigned) minE_pairIndex.second ) continue;
          //=====================================================================================
-    	 cout<<"Hiiiii_After_rejecting_Index: "<<endl;     
+    	 //cout<<"Hiiiii_After_rejecting_Index: "<<endl;     
          cout<<"(3)-----------is1elec = "<<is1elec<<endl          ;
          cout<<"Electron coll size : "                            ;
          cout<<nele<< "mi "                                       ;
@@ -1111,11 +1111,11 @@ if(doPileup_)
         cout<<"deltaR_ElecMu1: "<<deltaR_ElecMu1<<endl                                    ;
          //  H1_deltaR_ElecMu ->Fill(deltaR_ElecMu)                                       ;
 
-           ///if(deltaR_ElecMu1 < 0.1) break                                                ;  //0.3 before
+           if(deltaR_ElecMu1 < 0.1) break                                                ;  //0.3 before
 
                }
 
-         //  if(deltaR_ElecMu1 < 0.3) continue                                             ; //we were testing with 0.1
+          if(deltaR_ElecMu1 < 0.3) continue                                             ; //we were testing with 0.1
            cout<<"deltaR_ElecMu1_Cut: " <<deltaR_ElecMu1<<endl;
            //deltaR_ElecMu_Cut ->Fill(deltaR_ElecMu)                                      ;
 
@@ -1155,7 +1155,7 @@ if(doPileup_)
 
          }       
          //--------08-05-14----
-         cout<<"Hello_Before_wRecon_if"<<endl;
+    //     cout<<"Hello_Before_wRecon_if"<<endl;
           if(abs(e_dphi1) > DPhi_ENue_  && myElectron->pt() > 20.  /* && met->pt() > 30.&& nbtagjets!=0 */ )
          {
          e_mWT2               = sqrt(2.*mMet* myElectron->pt()* (1.-cos(e_dphi1)) )     ;         
@@ -1166,13 +1166,13 @@ if(doPileup_)
          cout<<"  Wenu_Mt : "<< e_mWT2                                                  ;                                              
          cout<< " cal met : "<< mMet<<" met->pt : "<<met->pt()  <<endl                  ;              
          //==========================================================================
-        cout<<"Hello_Inside_wRecon_if"<<endl;
+  //      cout<<"Hello_Inside_wRecon_if"<<endl;
          if(e_mWT2 > 0.)
 		{
          isWe_New = true                                                                ;
          wenu_mT_New ->Fill(e_mWT2,MyWeight)                                            ;
-	cout<<" isWe_New: "<<isWe_New<<endl;
-	cout<<" e_mWT2: "<<e_mWT2<<endl;
+//	cout<<" isWe_New: "<<isWe_New<<endl;
+//	cout<<" e_mWT2: "<<e_mWT2<<endl;
 	 	}
          }       
 

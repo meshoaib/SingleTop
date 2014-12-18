@@ -92,7 +92,12 @@ process.source = cms.Source("PoolSource",
 	#"file:/afs/cern.ch/work/m/meshoaib/PatAnalysis/CMSSW_5_3_21/src/MyAnalysis/TbZ/singleTopSkim_TChannel.root"
         
 	# "file:/afs/cern.ch/work/m/meshoaib/TupleSingleTop/CMSSW_5_3_11/src/TopQuarkAnalysis/SingleTop/test/singleTopSkim_TChannel.root"
-	"file:/afs/cern.ch/work/m/meshoaib/PatAnalysis/CMSSW_5_3_21/src/MyAnalysis/TbZ/singleTopSkim_TChannel.root"	
+
+
+#	"file:/afs/cern.ch/work/m/meshoaib/PatAnalysis/CMSSW_5_3_21/src/MyAnalysis/TbZ/singleTopSkim_TChannel.root"	
+	#SignalMC
+#	"file:/afs/cern.ch/work/m/meshoaib/PatAnalysis/CMSSW_5_3_21/src/MyAnalysis/TbZ/singleTopSkim_TChannel_77_1_EL1.root"
+	"file:/afs/cern.ch/work/m/meshoaib/PatAnalysis/CMSSW_5_3_21/src/MyAnalysis/TbZ/singleTopSkim_TChannel_Synchro.root"
 	#input from EOS directly
 
 
@@ -221,7 +226,7 @@ triggerConfiguration =  cms.PSet(
                                #  cms.InputTag('elPFIsoValueNeutral03PFIdPFIso')),                                
                                 
                                 
-                                metPtCut      = cms.double(25.)                                    ,
+                                metPtCut      = cms.double(30.)                                    ,
                                 vertexSrc     = cms.InputTag("offlinePrimaryVertices")             ,
                                 
 				BtagEtaCut    = cms.double(2.4)                                    ,
@@ -235,12 +240,13 @@ triggerConfiguration =  cms.PSet(
                                 JetsPtCut     = cms.double(30.)                                    ,
                                 JetsEtaCut    = cms.double(3.0)                                    ,
                                 ElecPtCut     = cms.double(20.)                                    ,
-                                doTruthMatch  = cms.bool(False)                                    ,
-                                
+				ElecEtaCut    = cms.double(2.5)                                    ,
+			        muonPtCut     = cms.double(20)                                     ,		
+				muonEtaCut    = cms.double(2.1)                                    ,
+                                doTruthMatch  = cms.bool(False)                                    ,			                             
                                 #realdata      = cms.bool(True)                                    ,
-
                                 realdata      = cms.bool(False)                                    ,
-                                doPileup      = cms.bool(False)                                     ,
+                                doPileup      = cms.bool(False)                                    ,
                                 printDebug    = cms.bool(True)
 
                               )
