@@ -116,13 +116,14 @@ TbZTopAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
      // iEvent.getByLabel("genParticles",genParticle)                      ;      
    // ================================================================
    
-   cout<<"--------START NEW EVENT---------------"<<"\n"<<endl           ;   
-   cout<< "*********************************************"<<"\n"<<endl   ;
-   cout<<"-------------------HELLOO WORLD------------------"<<endl      ; 
+   cout<<"--------START NEW EVENT---------------"<<"\n"<<endl                                                    ;   
+   cout<< "*********************************************"<<"\n"<<endl                                            ;
+   cout <<" Run ID " << iEvent.id().run()<<"\t"<<iEvent.luminosityBlock()<<"\t"<<iEvent.id().event()<<std::endl  ;
+   cout<<"-------------------HELLOO WORLD------------------"<<endl                                               ; 
    
   //=================================================================
         
-     m_muonCutFlow     ->Fill(0)            ;   // All Events
+   m_muonCutFlow     ->Fill(0)                                                                                   ;   // All Events
      
    //--- bool for combinations---------------
    bool is3elec      = false      ;
@@ -269,12 +270,12 @@ if(doPileup_)
        }      
 
 
-     tqZDoublEE = (*m_triggerSelector1)(m_triggerCache)        ;
-     tqZDoublMu = (*m_triggerSelector)(m_triggerCache)         ;
-     tqZMuEG    = (*m_triggerSelector2)(m_triggerCache)        ;  
+     tqZDoublEE = (*m_triggerSelector1)(m_triggerCache)         ;
+     tqZDoublMu = (*m_triggerSelector)(m_triggerCache)          ;
+     tqZMuEG    = (*m_triggerSelector2)(m_triggerCache)         ;  
                                                                        
-     cout<< "trigger_Double_Electron: "<<tqZDoublEE<<endl      ;     
-     if( tqZDoublEE == 1) tqZDoublEE = true                    ; 
+     cout<< "trigger_Double_Electron: "<<tqZDoublEE<<endl       ;     
+     if( tqZDoublEE == 1) tqZDoublEE = true                     ; 
      
      cout<< "trigger_Double_muon: "    <<tqZDoublMu<<endl       ;
      if(tqZDoublMu == 1 ) tqZDoublMu = true                     ;
@@ -297,7 +298,7 @@ if(doPileup_)
         m_muonCutFlow     ->Fill(1)                       ; // Events after trigger.
    
 
-   tbz::TbZUtility tbzHelper     ;
+   tbz::TbZUtility tbzHelper                              ;
    
    TLorentzVector tbz_w_cand,tbz_wenu_cand,tbz_met,tbz_bjet,tbz_Quarkjet,tbz_mu,tbz_el,tbz_top,tbz_topE            (0,0,0,0) ;
    TLorentzVector trueMu1,trueZmass,trueMu2,tbz_trueZ,trueElec1,trueElec2,tbz_trueZee                              
@@ -314,11 +315,9 @@ if(doPileup_)
    //---22-07-14--- tight lepton --------------------------------------------
    
     edm::Handle<std::vector<pat::Electron> > ElecPat     ;
-   // iEvent.getByLabel("selectedPatElectrons", ElecPat)   ;      //selectedPatElectrons, tightElectrons tightElectronsZeroIso
-  // iEvent.getByLabel("tightElectronsZeroIso", ElecPat)   ;
-   iEvent.getByLabel("tightElectrons", ElecPat)   ; // now tight leptons are not working ... others are OK... see how tuples are being created
- // iEvent.getByLabel("vetoElectrons", ElecPat)   ;//vetoElectrons
-
+ 
+   iEvent.getByLabel("tightElectrons", ElecPat)          ;// tight electrons 
+   // iEvent.getByLabel("vetoElectrons", ElecPat)   ;//vetoElectrons
 
    //---------------------------------
     edm::Handle<std::vector<pat::Electron> >   ElecNoIso       ;
@@ -332,10 +331,26 @@ if(doPileup_)
     vector<pat::Electron> m_preSel_Electrons                   ;  
 
    if(nelectrns > 0)
+   H1_noOfElectrons->Fill(nelectrns)                           ;  
+  // ------------------- 211214	Iso starts ----------------------
+
+   // conversions
+   edm::Handle<reco::ConversionCollection> conversions_h       ;
+   iEvent.getByLabel(conversionsInputTag_, conversions_h)      ;
+
+  // iso deposits
+	IsoDepositVals isoVals(isoValInputTags_.size());
+	for (size_t j = 0; j < isoValInputTags_.size(); ++j) 
 	{
-   H1_noOfElectrons->Fill(nelectrns)                    ;  
+	iEvent.getByLabel(isoValInputTags_[j], isoVals[j]);
 	}
 
+  // beam spot
+	edm::Handle<reco::BeamSpot> beamspot_h                   ;
+	iEvent.getByLabel(beamSpotInputTag_, beamspot_h)         ;
+	const reco::BeamSpot &beamSpot = *(beamspot_h.product()) ;
+ 
+  // ------------------- END    ---------------------------------
 
    //
    Handle<vector <pat::Muon> > muonColl                 ;
@@ -361,25 +376,22 @@ if(doPileup_)
   nmuons      = muonColl->size()                        ;
 
   if(nmuons > 0)
-	{ 
-   H1_noOfMuon->Fill(nmuons)                            ; 
-	}
+  H1_noOfMuon->Fill(nmuons)                             ; 
+	   
+  nleptons          =  nelectrns + nmuons               ;
    
-
-   nleptons          =  nelectrns + nmuons              ;
-   
-   nleptonsZeroIso   = nMuonsNoIso + nElecZeroIso       ;
+  nleptonsZeroIso   = nMuonsNoIso + nElecZeroIso        ;
   
   cout<<"nleptonsZeroIso: "<<nleptonsZeroIso <<endl     ;
    
-   cout<<"tight_electrons: "<<nelectrns<<endl           ;
-   cout<<"tight_muons: " << nmuons <<endl               ;
+  cout<<"tight_electrons: "<<nelectrns<<endl            ;
 
+  cout<<"tight_muons: " << nmuons <<endl                ;
 
    if(nleptons > 0)                                     
    H1_noOfleptons  -> Fill(nleptons)                    ;
      
-     // if(nleptons < 3.) return                        ; 
+   // if(nleptons < 3.) return                        ; 
    cout<<"Number_Of_Leptons == "<<nleptons<<endl        ;   
    //=========== VERTEX ==================================================
    
@@ -396,7 +408,7 @@ if(doPileup_)
    {      
       if(itv->ndof()< 4)                   continue                           ;
       if(fabs(itv->z())> 24.0)             continue                           ;
-      if(fabs(itv->position().rho())>2.0) continue                            ;      
+      if(fabs(itv->position().rho())>2.0)  continue                           ;      
       ++NVtx_old                                                              ;
    }
 
@@ -417,13 +429,10 @@ if(doPileup_)
 // if(nleptons > 1 && nleptons < 4 && nleptonsZeroIso > 2)   // 25-11-14
    {
 
-	cout<<"Nleptons after cut: "<<nleptons<<endl;
-
-    cout <<" Run ID " << iEvent.id().run()<<"\t"<<iEvent.luminosityBlock()<<"\t"<<iEvent.id().event()<<std::endl;
-     
-    cout<< "Number_Of_Leptons_after_cut == " << nleptons <<endl      ;    
-   
-    m_muonCutFlow     ->Fill(2)                                      ; // Events after 3 tight leptons cut
+    cout<<"Nleptons after cut: "<<nleptons<<endl                                                                  ;
+   // cout <<" Run ID " << iEvent.id().run()<<"\t"<<iEvent.luminosityBlock()<<"\t"<<iEvent.id().event()<<std::endl  ;  
+    cout<< "Number_Of_Leptons_after_cut == " << nleptons <<endl                                                   ;    
+    m_muonCutFlow     ->Fill(2)                                                                                   ; // Events after 3 tight leptons cut
 
   //=========== MET ========================================== 
    
@@ -479,11 +488,10 @@ if(doPileup_)
       cout<<"Size_jets_collection: "<<jets->size()<<endl         ;    
       JetCollection myJets(jets->begin(), jets->end())           ; 
      
-	 JJ  = myJets.size()                                        ;
-         cout<<"JJ: "<<JJ<<endl                                     ;
+      JJ  = myJets.size()                                        ;
+      cout<<"JJ: "<<JJ<<endl                                     ;
      
-
-	 sort(myJets.begin(), myJets.end(), PtGreater())            ;
+      sort(myJets.begin(), myJets.end(), PtGreater())            ;
    
 
           double ee_dphi                = -100    ;
@@ -724,7 +732,7 @@ if(doPileup_)
             photonIso     =  myElectron -> pfIsolationVariables().photonIso               ;
             ele_pt_new    =  myElectron -> pt()                                           ;
 
-	    relIso_chargedHad    = (var0 + NeutralHadIso + photonIso) /ele_pt_new               ;
+	    relIso_chargedHad    = (var0 + NeutralHadIso + photonIso) /ele_pt_new         ;
 
             cout<<"relIso_chargedHad: "<<relIso_chargedHad <<endl               ;
 
@@ -737,7 +745,7 @@ if(doPileup_)
             delta_Eta_jet_elec    =  jets_eta-elec_eta1                         ;
 	    cout<<"delta_Eta_jet_elec: "<<delta_Eta_jet_elec<<endl              ;
 
-            //delta_Phi_jet_elec    =  jets_phi-elec_phi                          ;
+            //delta_Phi_jet_elec    =  jets_phi-elec_phi                        ;
 	    delta_Phi_jet_elec    =  deltaPhi(jets_phi,elec_phi)                ;	           
 	    cout<<"delta_Phi_jet_elec: " <<delta_Phi_jet_elec<<endl;
  
@@ -846,8 +854,13 @@ if(doPileup_)
          {      
       //     cout<<"Electrons_for_overlap: "<<endl; 
 
-        edm::Ptr<pat::Electron>  myElectron(&myelectron_new,ni)                       ;
-        if(myElectron->pt() < ElecPtCut_)     continue                                ;
+        edm::Ptr<pat::Electron>  myElectron(&myelectron_new,ni)                      ;
+   
+	double iso_ch = (*(isoVals)[0])[myElectron]                                   ;
+	double iso_em = (*(isoVals)[1])[myElectron]                                   ;
+	double iso_nh = (*(isoVals)[2])[myElectron]                                   ;
+
+       if(myElectron->pt() < ElecPtCut_)     continue                                 ;
         if(myElectron->eta()> ElecEtaCut_)    continue                                ;
 	
         var1          =  myElectron -> pfIsolationVariables().chargedHadronIso        ;
