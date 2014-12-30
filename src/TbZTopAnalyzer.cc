@@ -867,10 +867,10 @@ if(doPileup_)
          double deltaPhi_ElecMu     = 1000                    ;
          double deltaEta_ElecMu     = 1000                    ;
          double deltaR_ElecMu       = 1000.                   ;
-         double elec_eta_New         = -100.                  ;
-	 double elec_phi_New         = -100.                  ;
+         double elec_eta_New        = -100.                   ;
+	 double elec_phi_New        = -100.                   ;
 	 
-	 double var1                   = 0.       ;
+	 double var1                    = 0.       ;
          double NeutralHadIso1          = 0.       ;
          double photonIso1              = 0.       ;
          double ele_pt_new1             = 0.       ;
@@ -883,6 +883,7 @@ if(doPileup_)
       //     cout<<"Electrons_for_overlap: "<<endl; 
 
         edm::Ptr<pat::Electron>  myElectron(&myelectron_new,ni)              ;
+	if(met->pt()< metPtCut_) continue                                    ;
 
 	double RhoCorrectedIso1 = myElectron->userFloat("RhoCorrectedIso")   ;
 
@@ -944,6 +945,7 @@ if(doPileup_)
 	 
          if(myMuonPtr ->pt() < muonPtCut_)     continue                                 ;
          if(myMuonPtr ->eta() > muonEtaCut_)   continue                                 ;
+	// if(met->pt()< metPtCut_) continue                                              ;
 
   	 cout<<" DeltaCorrectedIso1: "<<DeltaCorrectedIso1<<endl                        ;
 
@@ -954,17 +956,17 @@ if(doPileup_)
 	 MuonEta_Prodcr = myMuonPtr->eta()                                              ;
          MuonPhi_Prodcr = myMuonPtr->phi()                                              ;
          deltaEta_ElecMu = elec_eta_New - MuonEta_Prodcr                                ;
- 	 cout<<" deltaEta_ElecMu: "<<deltaEta_ElecMu<<endl                              ;
+ 	 //cout<<" deltaEta_ElecMu: "<<deltaEta_ElecMu<<endl                              ;
          deltaPhi_ElecMu = deltaPhi(elec_phi_New,MuonPhi_Prodcr)                        ;
-	 cout<<"deltaPhi_ElecMu: "<<deltaPhi_ElecMu<<endl                               ;
+	 //cout<<"deltaPhi_ElecMu: "<<deltaPhi_ElecMu<<endl                               ;
 	
 	 deltaR_ElecMu    =  sqrt(( deltaEta_ElecMu)*(deltaEta_ElecMu)
                                              +( deltaPhi_ElecMu)*(deltaPhi_ElecMu))     ;
  	cout<<"deltaR_ElecMu: "<<deltaR_ElecMu<<endl                                    ;
            H1_deltaR_ElecMu ->Fill(deltaR_ElecMu)                                       ;
 
-           if(deltaR_ElecMu < 0.1) break                                                ;  //0.3 before
-
+          if(deltaR_ElecMu < 0.1) break                                                ;  //0.3 before
+	cout<<" Hello_deltaR_ElecMu: " << deltaR_ElecMu  <<endl                         ;
                }
 
          if(deltaR_ElecMu < 0.3) continue             				; //we were testing with 0.1
@@ -1122,17 +1124,12 @@ if(doPileup_)
 
       for(unsigned int  mi=0;  mi< nele;  ++mi)
       {
-      	 //cout<<"Hiiiiiiiiiiiiiii_afterZ_insidFor: "<<endl;
          if(met->pt()< metPtCut_)              continue                                           ;
-	 //if(myElectron->pt() < ElecPtCut_)     continue                                           ;
-         //if(myElectron->eta()> ElecEtaCut_)    continue                                           ;
-
-         // if(relIso_elec >0.20)        continue                                                 ;
-     	 //cout<<"Hiiiiii_after_METCut: "<<endl;    
+     	// cout<<"Hiiiiii_before_ElecPair_rejection: "<<endl;    
          //====================================================================================
          if( mi ==  (unsigned) minE_pairIndex.first || mi == (unsigned) minE_pairIndex.second ) continue;
          //=====================================================================================
-    	 //cout<<"Hiiiii_After_rejecting_Index: "<<endl;     
+    	// cout<<"Hiiiii_After_rejecting_Index: "<<endl;     
          cout<<"(3)-----------is1elec = "<<is1elec<<endl          ;
          cout<<"Electron coll size : "                            ;
          cout<<nele<< "mi "                                       ;
@@ -1143,6 +1140,7 @@ if(doPileup_)
          edm::Ptr<pat::Electron> myElectron(ElecPat,mi)                                ;
 
 	double RhoCorrectedIso2 = myElectron->userFloat("RhoCorrectedIso")             ;
+	//cout<< "RhoCorrectedIso2: " <<RhoCorrectedIso2<<endl;
 	if(RhoCorrectedIso2 > 0.12)           continue                                 ;
 
 	if(myElectron->pt() < ElecPtCut_)     continue                                 ;
@@ -1166,7 +1164,7 @@ if(doPileup_)
 	double  deltaEta_ElecMu1 = -100 ;
 	//double  deltaEta_ElecMu1 = -100 ;
 	double deltaPhi_ElecMu1  = -100 ;
-	double deltaR_ElecMu1    = -100 ;
+	double deltaR_ElecMu1    = 1000 ;
 
 	double elec_eta_New1 = myElectron->eta();
 	double elec_phi_New1 = myElectron->phi();
@@ -1198,7 +1196,7 @@ if(doPileup_)
 
                }
 
-          if(deltaR_ElecMu1 < 0.3) continue                                             ; //we were testing with 0.1
+           if(deltaR_ElecMu1 < 0.3) continue                                             ; //we were testing with 0.1
            cout<<"deltaR_ElecMu1_Cut: " <<deltaR_ElecMu1<<endl;
            //deltaR_ElecMu_Cut ->Fill(deltaR_ElecMu)                                      ;
 
@@ -1250,6 +1248,7 @@ if(doPileup_)
          cout<< " cal met : "<< mMet<<" met->pt : "<<met->pt()  <<endl                  ;              
          //==========================================================================
   //      cout<<"Hello_Inside_wRecon_if"<<endl;
+  	  cout <<" Hello_WtransverseMass: "<< e_mWT2 <<endl;
          if(e_mWT2 > 0.)
 		{
          isWe_New = true                                                                ;
@@ -1694,7 +1693,7 @@ if(doPileup_)
 	cout<<"is2elec_before_3eCombination: "<<is2elec<<endl;
 	cout<<"isWe_New_before_3eCombination: "<<isWe_New<<endl;
        // ======================= is3elec      =====================
-       if(nelectrns == 3 && is2elec && isWe_New && nmuons == 0  &&  ELECCTRON_MSS >0. && e_mWT2 > 0. /*e_mWT2 > 20.*/ && ELECCTRON_MSS >= MinZMAss_ && ELECCTRON_MSS < MaxZMass_)
+if(nelectrns ==3 && is2elec && isWe_New && nmuons ==0  &&  ELECCTRON_MSS >0. && e_mWT2 > 0. /*e_mWT2 > 20.*/ && ELECCTRON_MSS >= MinZMAss_ && ELECCTRON_MSS < MaxZMass_)
        {        
        m_muonCutFlow     ->Fill(3) ; // Events after nelectrns == 3 && is2elec && isWe_New && nmuons ==0  &&  ELECCTRON_MSS >0. && e_mWT2 > 0. cut
        // ---- 170814------
