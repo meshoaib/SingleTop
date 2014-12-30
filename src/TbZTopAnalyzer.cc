@@ -315,25 +315,25 @@ if(doPileup_)
    //---22-07-14--- tight lepton --------------------------------------------
    
     edm::Handle<std::vector<pat::Electron> > ElecPat     ;
- 
-   iEvent.getByLabel("tightElectrons", ElecPat)          ;// tight electrons 
-   // iEvent.getByLabel("vetoElectrons", ElecPat)   ;//vetoElectrons
+    iEvent.getByLabel("tightElectrons", ElecPat)         ;// tight electrons 
 
-   //---------------------------------
+    // iEvent.getByLabel("vetoElectrons", ElecPat)   ;//vetoElectrons
+ 
+    //---------------------------------
     edm::Handle<std::vector<pat::Electron> >   ElecNoIso       ;
     iEvent.getByLabel("tightElectronsZeroIso", ElecNoIso)      ;
-  //-----------------------------------
+    //-----------------------------------
     nElecZeroIso   = ElecNoIso->size()                         ;  
     nelectrns      = ElecPat->size()                           ;
- //---------------------------
+    //---------------------------
     cout<<"pat-tight-electrons"<<nelectrns<<endl               ;
     cout<<"tight-Electrons-ZeroISo: "<<nElecZeroIso<<endl      ;
     vector<pat::Electron> m_preSel_Electrons                   ;  
 
    if(nelectrns > 0)
    H1_noOfElectrons->Fill(nelectrns)                           ;  
-  // ------------------- 211214	Iso starts ----------------------
-
+   // ------------------- 211214	Iso starts ----------------------
+	std::auto_ptr< std::vector< pat::Electron > > PatElectrons (new std::vector<pat::Electron>(*ElecPat));
    // conversions
    edm::Handle<reco::ConversionCollection> conversions_h       ;
    iEvent.getByLabel(conversionsInputTag_, conversions_h)      ;
@@ -349,7 +349,7 @@ if(doPileup_)
 	edm::Handle<reco::BeamSpot> beamspot_h                   ;
 	iEvent.getByLabel(beamSpotInputTag_, beamspot_h)         ;
 	const reco::BeamSpot &beamSpot = *(beamspot_h.product()) ;
- 
+	cout <<"beamSpot: "<<beamSpot<<endl                      ; 
   // ------------------- END    ---------------------------------
 
    //
@@ -472,7 +472,8 @@ if(doPileup_)
       pat::ElectronCollection myelectron_new( ElecPat->begin(), ElecPat->end() )         ;
       pat::ElectronCollection myelectron_NoIso( ElecNoIso->begin(), ElecNoIso->end() )   ;
     
-      nele      = myelectron_new.size()                                                  ;                                                          
+     // nele      = myelectron_new.size()                                                  ;  //---originally we are using this --
+     nele         = PatElectrons->size()                                                 ;                                                        
       neleNoIso = myelectron_NoIso.size()                                                ; 
     
       cout<<"size  ############ : " << nele << "  2nd size : "<< nelectrns <<endl        ;
@@ -520,7 +521,7 @@ if(doPileup_)
           double hcalIso                = 0.      ;
           // double trackIso            = 0.      ;
           double iso                    = 0.      ;
-          double relIso                           ;
+          double relIso                 = 1000    ;
           double pT_Z_ee                = 0.      ;
           double pT_Z_uu                = 0.      ;
           double e_mWT1                 = 0.      ;
@@ -711,7 +712,7 @@ if(doPileup_)
           
          for(unsigned  ni=0;  ni< nele ; ++ni)
          {            
-            edm::Ptr<pat::Electron> myElectron(&myelectron_new,ni)                        ;
+            edm::Ptr<pat::Electron> myElectron(&myelectron_new,ni)              ;
 
             if(met->pt()< metPtCut_)              continue                      ;
 	    if(myElectron->pt() < ElecPtCut_)     continue                      ;
@@ -719,7 +720,14 @@ if(doPileup_)
 
 	    double RhoCorrectedIso = myElectron->userFloat("RhoCorrectedIso")   ;
 	    double VertexDxy       = myElectron->userFloat("VertexDxy")         ;
+	    //RhoCorrectedIso_       ->Fill(RhoCorrectedIso)                    ;
 
+	    if(RhoCorrectedIso > 0.12 ) continue                                ;
+	   
+	    cout << "RhoCorrectedIso_after_cut: " <<RhoCorrectedIso<<endl       ;
+	   
+	    RhoCorrectedIso_       ->Fill(RhoCorrectedIso)                      ;
+	    
 	    cout<<" RhoCorrectedIso_171214: " <<RhoCorrectedIso<<endl           ;
 	    cout<<" VertexDxy_Elec_171214: "<<VertexDxy<<endl                   ;
             //==========================================================                                                                     
@@ -743,9 +751,11 @@ if(doPileup_)
             H1_elec_eta           -> Fill( elec_eta1,MyWeight)                  ;
             H1_elec_phi           -> Fill( elec_phi1,MyWeight)                  ;
             delta_Eta_jet_elec    =  jets_eta-elec_eta1                         ;
+	    
 	    cout<<"delta_Eta_jet_elec: "<<delta_Eta_jet_elec<<endl              ;
 
             //delta_Phi_jet_elec    =  jets_phi-elec_phi                        ;
+
 	    delta_Phi_jet_elec    =  deltaPhi(jets_phi,elec_phi)                ;	           
 	    cout<<"delta_Phi_jet_elec: " <<delta_Phi_jet_elec<<endl;
  
@@ -754,33 +764,50 @@ if(doPileup_)
                                  
              if (delta_R_jet_elec > 0.)                                         
             H1_delta_R_jet_elec     -> Fill(delta_R_jet_elec,MyWeight)          ;  
+
             if(fabs( delta_Eta_jet_elec)<3.5)                                   
+
             H1_delta_Eta_jet_elec   -> Fill(delta_Eta_jet_elec,MyWeight)        ;
             H1_delta_Phi_jet_elec   -> Fill(delta_Phi_jet_elec,MyWeight)        ;            
+
             if(delta_R_jet_elec < 0.5) break                                    ;    
+
          }
          
          if(delta_R_jet_elec < 0.5 ) continue ;
-         
+         double DeltaCorrectedIso = 0.        ;
+
          for(unsigned int mi=0;mi < muonColl->size(); ++mi)
          {
-            edm::Ptr<pat::Muon> myMuon(muonColl,mi)                         ;
 
-	   cout<<"deltaBeta_Correction: "<<myMuon->dB()<<endl  ;
-	   double VertexDz  = myMuon->userFloat("VertexDz")    ;
+           edm::Ptr<pat::Muon> myMuon(muonColl,mi)                          ;
+
+	   cout<<"deltaBeta_Correction: "<<myMuon->dB()<<endl               ;
+
+	   double VertexDz  = myMuon->userFloat("VertexDz")                 ;
+
 	  // double RhoCorrectedIso = myMuon->userFloat("RhoCorrectedIso")     ;
-	   double DeltaCorrectedIso = myMuon->userFloat("DeltaCorrectedIso") ;
-	   double VertexDxy          = myMuon->userFloat("VertexDxy")        ;
+
+	   DeltaCorrectedIso         = myMuon->userFloat("DeltaCorrectedIso") ;
+
+	   double VertexDxy          = myMuon->userFloat("VertexDxy")         ;
+
 	   cout<<"VertexDxy_New_161214: "<<VertexDxy<<endl                   ;
 	   cout<<"DeltaCorrectedIso_New_161214: "<<DeltaCorrectedIso<<endl   ;
 	   ///cout<<"RhoCorrectedIso_New_161214: "<<RhoCorrectedIso<<endl       ;
 	   cout<<"VertexDz_New_161214: " <<VertexDz<<endl                    ;
-   // --------------------------------------------------
-       //  ev_.l_charge  = myMuon->charge();
-       //  ev_.l_pt      = myMuon->pt();
-       //  ev_.l_eta     = myMuon->eta();
-       // ev_.l_phi     = myMuon->phi();
-	 //tree_    ->Fill();
+
+	   if(DeltaCorrectedIso > 0.12 ) continue                            ;
+
+           cout<<" DeltaCorrectedIso_after_cut: "<< DeltaCorrectedIso <<endl ;
+
+	   DeltaCorrectedIso_ ->Fill(DeltaCorrectedIso)                      ;
+	// --------------------------------------------------
+	//  ev_.l_charge  = myMuon->charge();
+        //  ev_.l_pt      = myMuon->pt();
+        //  ev_.l_eta     = myMuon->eta();
+        //  ev_.l_phi     = myMuon->phi();
+	//  tree_          ->Fill();
    // --------------------------------------------------
 
             if(met->pt()< metPtCut_)          continue                          ;
@@ -851,22 +878,41 @@ if(doPileup_)
 
 
          for(unsigned  ni=0;  ni< nele ; ++ni)
-         {      
+         {
+      
       //     cout<<"Electrons_for_overlap: "<<endl; 
 
-        edm::Ptr<pat::Electron>  myElectron(&myelectron_new,ni)                      ;
-   
-	double iso_ch = (*(isoVals)[0])[myElectron]                                   ;
-	double iso_em = (*(isoVals)[1])[myElectron]                                   ;
-	double iso_nh = (*(isoVals)[2])[myElectron]                                   ;
+        edm::Ptr<pat::Electron>  myElectron(&myelectron_new,ni)              ;
 
-       if(myElectron->pt() < ElecPtCut_)     continue                                 ;
-        if(myElectron->eta()> ElecEtaCut_)    continue                                ;
-	
-        var1          =  myElectron -> pfIsolationVariables().chargedHadronIso        ;
+	double RhoCorrectedIso1 = myElectron->userFloat("RhoCorrectedIso")   ;
+
+	if(RhoCorrectedIso1 > 0.12) continue                                 ;
+	cout<<" RhoCorrectedIso1_after_cut: " <<RhoCorrectedIso1 <<endl      ;
+
+  	 // get reference to electron  
+  	//pat::ElectronRef myElectron(PatElectrons, ni) ;
+	//pat::Electron & myElectron = (*PatElectrons)[ni];
+	//double iso_ch = (*(isoVals)[0])[myElectron]                                   ;
+	//cout<<" iso_ch: " <<iso_ch <<endl                                             ;
+	//double iso_em = (*(isoVals)[1])[myElectron]                                   ;
+	//cout<<" iso_em: "<<iso_em<<endl                                               ;
+	///double iso_nh = (*(isoVals)[2])[myElectron]                                   ;
+	//cout<<" iso_nh: "<<iso_nh<<endl                                               ;
+
+      	//if(myElectron->pt() < ElecPtCut_)     continue                                 ;
+     	 //if(myElectron->eta()> ElecEtaCut_)    continue                                ;
+	//if(myElectron.pt() < ElecPtCut_)     continue                                 ;
+	 // if(myElectron.eta()> ElecEtaCut_)    continue                                ;
+       
+        var1           =  myElectron -> pfIsolationVariables().chargedHadronIso        ;
         NeutralHadIso1 =  myElectron -> pfIsolationVariables().neutralHadronIso       ;
         photonIso1     =  myElectron -> pfIsolationVariables().photonIso              ;
         ele_pt_new1    =  myElectron -> pt()                                          ;
+
+	// var1          =  myElectron.pfIsolationVariables().chargedHadronIso        ;
+       // NeutralHadIso1 =  myElectron.pfIsolationVariables().neutralHadronIso       ;
+        //photonIso1     =  myElectron.pfIsolationVariables().photonIso              ;
+       // ele_pt_new1    =  myElectron.pt()                                          ;
 
         relIso_chargedHad1    = (var1 + NeutralHadIso1 + photonIso1) /ele_pt_new1     ;
 
@@ -880,21 +926,37 @@ if(doPileup_)
         elec_phi_New=myElectron->phi()                                               ;
 	cout<< "elec_phi_New: "<<elec_phi_New<<endl                                  ;
 
+
+	//elec_eta_New = myElectron.eta()                                             ;
+        //cout<<"elec_eta_New: "<<elec_eta_New<<endl                                   ;
+        //elec_phi_New=myElectron.phi()                                               ;
+       // cout<< "elec_phi_New: "<<elec_phi_New<<endl                                  ;
+
+
+
 	// --------------- Overlap removing ------- 131214 -----------------------------
 	 for(unsigned int mi=0;mi < muonColl->size(); ++mi)
          {
 
          edm::Ptr<pat::Muon> myMuonPtr(muonColl,mi)                                     ;
 
+	 double DeltaCorrectedIso1 = myMuonPtr->userFloat("DeltaCorrectedIso")          ;
+	 
          if(myMuonPtr ->pt() < muonPtCut_)     continue                                 ;
          if(myMuonPtr ->eta() > muonEtaCut_)   continue                                 ;
 
+  	 cout<<" DeltaCorrectedIso1: "<<DeltaCorrectedIso1<<endl                        ;
+
+ 	 if(DeltaCorrectedIso1 > 0.12)          continue                                ;
+
+ 	 cout<<" DeltaCorrectedIso1_after_cut: "<<DeltaCorrectedIso1<<endl              ;
+	
 	 MuonEta_Prodcr = myMuonPtr->eta()                                              ;
          MuonPhi_Prodcr = myMuonPtr->phi()                                              ;
          deltaEta_ElecMu = elec_eta_New - MuonEta_Prodcr                                ;
-	cout<<" deltaEta_ElecMu: "<<deltaEta_ElecMu<<endl                               ;
+ 	 cout<<" deltaEta_ElecMu: "<<deltaEta_ElecMu<<endl                              ;
          deltaPhi_ElecMu = deltaPhi(elec_phi_New,MuonPhi_Prodcr)                        ;
-	cout<<"deltaPhi_ElecMu: "<<deltaPhi_ElecMu<<endl                                ;
+	 cout<<"deltaPhi_ElecMu: "<<deltaPhi_ElecMu<<endl                               ;
 	
 	 deltaR_ElecMu    =  sqrt(( deltaEta_ElecMu)*(deltaEta_ElecMu)
                                              +( deltaPhi_ElecMu)*(deltaPhi_ElecMu))     ;
@@ -1079,9 +1141,13 @@ if(doPileup_)
          
          //=======================================================  
          edm::Ptr<pat::Electron> myElectron(ElecPat,mi)                                ;
+
+	double RhoCorrectedIso2 = myElectron->userFloat("RhoCorrectedIso")             ;
+	if(RhoCorrectedIso2 > 0.12)           continue                                 ;
+
 	if(myElectron->pt() < ElecPtCut_)     continue                                 ;
         if(myElectron->eta()> ElecEtaCut_)    continue                                 ;
-
+	
 	var2          =  myElectron -> pfIsolationVariables().chargedHadronIso        ;
         NeutralHadIso2 =  myElectron -> pfIsolationVariables().neutralHadronIso       ;
         photonIso2     =  myElectron -> pfIsolationVariables().photonIso              ;
@@ -1108,6 +1174,10 @@ if(doPileup_)
          {
 
          edm::Ptr<pat::Muon> myMuonPtr(muonColl,mi)                                     ;
+	 double DeltaCorrectedIso2 = myMuonPtr->userFloat("DeltaCorrectedIso")          ;
+	 cout<< "DeltaCorrectedIso2: "<<DeltaCorrectedIso2<<endl                        ;
+	 if(DeltaCorrectedIso2 > 0.12 )        continue                                 ;
+	cout<< "DeltaCorrectedIso2_afte_cut: "<<DeltaCorrectedIso2<<endl                ; 
 
          if(myMuonPtr ->pt() < muonPtCut_)     continue                                 ;
          if(myMuonPtr ->eta() > muonEtaCut_)   continue                                 ;
@@ -1269,21 +1339,37 @@ if(doPileup_)
 
       for(unsigned int mi=0;mi < muonColl->size(); ++mi)
       {
-          edm::Ptr<pat::Muon> myMuon(muonColl,mi)              ; 
+         edm::Ptr<pat::Muon> myMuon(muonColl,mi)                            ; 
+	 
+	 double DeltaCorrectedIso3 = myMuon->userFloat("DeltaCorrectedIso") ;
+	
+	 cout<<" DeltaCorrectedIso3: " <<DeltaCorrectedIso3<<endl           ;
 
-         if(met->pt()< metPtCut_)          continue            ;
+
+         if(met->pt()< metPtCut_)          continue                         ;
 
          if(myMuon->pt() < muonPtCut_)     continue            ;
          if(myMuon->eta() > muonEtaCut_)   continue            ;
 
+	 if(DeltaCorrectedIso3 > 0.12)     continue            ;
+
+	cout<<" DeltaCorrectedIso3_after_cut: " <<DeltaCorrectedIso3<<endl                                       ;
 
          double ChargedHadronPt    =   myMuon->pfIsolationR04().sumChargedHadronPt                               ; 
          double sumNeutralHadronEt =   myMuon->pfIsolationR04().sumNeutralHadronEt                               ;
          double sumPhotonEt        =   myMuon->pfIsolationR04().sumPhotonEt                                      ;
          double sumPUPt            =   myMuon->pfIsolationR04().sumPUPt                                          ;
+
+	cout<<"sumPUPt: " <<sumPUPt <<endl;
+	cout<< "sumPhotonEt: " <<sumPhotonEt <<endl;
+	cout<< "sumNeutralHadronEt: "<< sumNeutralHadronEt <<endl;
+	cout<< "ChargedHadronPt: " << ChargedHadronPt <<endl;
+
          double Iso = (ChargedHadronPt +  max(0. , sumNeutralHadronEt + sumPhotonEt - 0.5*sumPUPt))/myMuon->pt() ;
+
          cout<< "Muon_Isolation_Analyszer: "<< Iso <<endl                                                        ;
 	 if(Iso > 0.12) continue                                    ;
+
 	 cout<<"tight_Muon_Iso_afterCut: "<< Iso <<endl             ;
 
          SumofpT_All_Muons += myMuon->pt()                          ;
@@ -1395,11 +1481,17 @@ if(doPileup_)
        cout<< mi<< "  first : "<<  minM_pairIndex.first<<" sec : "                   ;
        cout<<  minM_pairIndex.second <<endl                                          ; 
        //=========================================================                        
-       edm::Ptr<pat::Muon> myMuon( muonColl,mi)                                      ; 
+        edm::Ptr<pat::Muon> myMuon( muonColl,mi)                                      ; 
 
-       if(myMuon->pt() < muonPtCut_)     continue                                    ;
-       if(myMuon->eta() > muonEtaCut_)   continue                                    ;
+	double DeltaCorrectedIso4 = myMuon->userFloat("DeltaCorrectedIso")           ;
+	cout<<"DeltaCorrectedIso4: "<<DeltaCorrectedIso4<<endl                       ;
 
+	if(DeltaCorrectedIso4 > 0.12)     continue                                   ;
+
+        if(myMuon->pt() < muonPtCut_)     continue                                   ;
+        if(myMuon->eta() > muonEtaCut_)   continue                                   ;
+
+	cout<<"DeltaCorrectedIso4_after_cut: "<<DeltaCorrectedIso4<<endl             ;
 
 	 double ChargedHadronPt1    =   myMuon->pfIsolationR04().sumChargedHadronPt                               ;
          double sumNeutralHadronEt1 =   myMuon->pfIsolationR04().sumNeutralHadronEt                               ;
@@ -2666,7 +2758,8 @@ H1_NoIsoElec_Pt = fs1->make<TH1D> ("H1_NoIsoElec_Pt","H1_NoIsoElec_Pt",100,0.,20
 //-----------
  H1_deltaR_ElecMu            = fs1->make<TH1D> ("H1_deltaR_ElecMu","H1_deltaR_ElecMu",50, 0, 5)                 ;
 deltaR_ElecMu_Cut            = fs1 ->make<TH1D> ("deltaR_ElecMu_Cut","deltaR_ElecMu_Cut",50,0,5)                ;
-
+ RhoCorrectedIso_            = fs1 ->make<TH1D> ("RhoCorrectedIso","RhoCorrectedIso_Electrons",100,0,1)                ;
+DeltaCorrectedIso_          = fs1 ->make<TH1D> ("DeltaCorrectedIso","DeltaCorrectedIso_Muons",100,0,1)                ;
 //H1_elec_eta                  = fs1->make<TH1D> ("H1_elec_eta","H1_elec_eta", 100.0,-3,3)                      ;
 //H1_elec_phi                  = fs1->make<TH1D> ("H1_elec_phi","H1_elec_phi", 100.0,-3,3)                      ;
 
@@ -2676,6 +2769,8 @@ deltaR_ElecMu_Cut            = fs1 ->make<TH1D> ("deltaR_ElecMu_Cut","deltaR_Ele
 
 //H1_elec_eta        ->Sumw2()   ;
 //H1_elec_phi        ->Sumw2()   ;
+
+// RhoCorrectedIso_ ->Sumw2()    ;
 
 H1_deltaR_ElecMu   ->Sumw2()   ;
 deltaR_ElecMu_Cut  ->Sumw2()   ;
