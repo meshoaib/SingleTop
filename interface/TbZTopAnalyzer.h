@@ -625,6 +625,9 @@ MiniEvent_t ev_             ;
 TH1D* H1_deltaR_ElecMu          ;
 TH1D* deltaR_ElecMu_Cut         ;
 
+
+TH1D* RhoCorrectedIso_        ;
+TH1D* DeltaCorrectedIso_      ;
 //TH1D* top_ptE_2nd_is2muon1elec  ;
 //TH1D* top_ptE__2nd_is3elec      ;
 //TH1D* top_pt_2nd_is3muon        ;
