@@ -421,12 +421,8 @@ if(doPileup_)
   
   //###############  3 tight leptons #####################################################
 
-  // if(nleptons == 2 && nleptons != 3 && nleptonsZeroIso == 1 && nleptonsZeroIso != 2 ) 
-  //if(nleptons == 2 && nleptonsZeroIso == 1 )
-  //if(nleptonsZeroIso == 3 )
- //if((nleptonsZeroIso == 1) && (nleptons == 2))
- if(nleptons == 3 && nleptons != 4 )
-// if(nleptons > 1 && nleptons < 4 && nleptonsZeroIso > 2)   // 25-11-14
+// if(nleptons == 3 && nleptons != 4 )
+ if(nleptons > 1 && nleptons < 4 && nleptonsZeroIso > 2)   // 31-12-14
    {
 
     cout<<"Nleptons after cut: "<<nleptons<<endl                                                                  ;
