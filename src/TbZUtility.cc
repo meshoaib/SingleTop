@@ -76,7 +76,7 @@ void  tbz::TbZUtility::makePairs( const std::vector<pat::Muon> &mv,
 	reco::NamedCompositeCandidate DY_tmp;
 	DY_tmp.setP4( (*muItr).p4() + (*muItr2).p4() );
 	//DY.push_back(DY_tmp);
-	std::cout<<"charge1 "<<(*muItr).charge()<<"  charge2 "<<(*muItr2).charge()<< " Z mass "<< mass << " dphi "<< dphi<<std::endl;
+	std::cout<<"charge1 "<<(*muItr).charge()<<"  charge2 "<<(*muItr2).charge()<< " Z mass Muon Producer: "<< mass << " dphi "<< dphi<<std::endl;
 	//sfos_masses.push_back ( mass );
 
 	if( (*muItr).pt() > (*muItr2).pt() )
@@ -106,7 +106,7 @@ void  tbz::TbZUtility::makePairs( const std::vector<pat::Muon> &mv,
 
 	minM_indexPair= std::make_pair(m_i, m_ii);
 
-	std::cout<<"closest Z mass "<<min<<"  with muon indices : ( "<<m_i<<",   "<<m_ii<<" )"<< " cont size : "<<  mv.size()<<std::endl; 
+	std::cout<<"closest_Z_mass_differnce_min: "<<min<<"  with muon indices : ( "<<m_i<<",   "<<m_ii<<" )"<< " cont size : "<<  mv.size()<<std::endl; 
 
 }//end of rePair
 
@@ -146,11 +146,11 @@ void  tbz::TbZUtility::makeEPairs(const std::vector<pat::Electron> &ev, std::vec
                 {
         //double dphi = (*electItr).phi() - (*electItr2).phi();
         if( fabs(dphi)< 0.5) continue; //previous 1.
-	double mass1  =  ( (*electItr).p4() + (*electItr2).p4() ).mass();
-        reco::NamedCompositeCandidate DY_tmp1;
-        DY_tmp1.setP4( (*electItr).p4() + (*electItr2).p4() );
+	double mass1  =  ( (*electItr).p4() + (*electItr2).p4() ).mass()              ;
+        reco::NamedCompositeCandidate DY_tmp1                                         ;
+        DY_tmp1.setP4( (*electItr).p4() + (*electItr2).p4() )                         ;
 	//      DY1.push_back(DY_tmp1);
-        std::cout<< " Z mass "<< mass1 << " dphi "<< dphi<<std::endl;
+        std::cout<< " Z mass Electron Producer: "<< mass1 << " dphi "<< dphi<<std::endl ;
         //el_sfos_masses.push_back ( mass1 );
         
 	if( (*electItr).pt() > (*electItr2).pt() )
@@ -180,7 +180,7 @@ void  tbz::TbZUtility::makeEPairs(const std::vector<pat::Electron> &ev, std::vec
 
 
 	minE_indexPair= std::make_pair(m_e, m_ee);        
-  cout<<"closest Z mass "<<min1<<"  with Electron indices : ( ";
+  cout<<"closest_Z_mass_difference_min1: "<<min1<<"  with Electron indices : ( ";
   cout<<m_e<<",   "<<m_ee<<" )"<< " cont size : "<<  ev.size()<<endl;  
 
 }//end of electron rePair
