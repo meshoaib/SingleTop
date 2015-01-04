@@ -22,15 +22,15 @@
 
 
 */
-// Class:      TbZTopAnalyzer
-/**\class TbZ TbZTopAnalyzer.cc MyAnalysis/TbZ/src/TbZTopAnalyzer.cc
+// Class:      TbZTopAnalyzer_LooseLept
+/**\class TbZ TbZTopAnalyzer_LooseLept.cc MyAnalysis/TbZ/src/TbZTopAnalyzer_LooseLept.cc
  Description: [This is a association study of Z-boson with Single top quark and this class is going to recontstruct top from 3 leptons,atleast 2 b
  Implementation:
      [Notes on implementation]
 */
 //
-// Original Author: Muhammad Shoaib &  Ashfaq Ahmad
-//         Created:  Sun Aug  4 09:31:38 PKT 2013
+// Original Author: Muhammad Shoaib 
+//         Created:  Sat Jan  3 14:51:38 PKT 2015
 // $Id$
 // system include files
 
@@ -150,10 +150,10 @@ using namespace std;
 using namespace edm;
 using namespace reco;
 
-class TbZTopAnalyzer : public edm::EDAnalyzer {
+class TbZTopAnalyzer_LooseLept : public edm::EDAnalyzer {
    public:
-      explicit TbZTopAnalyzer(const edm::ParameterSet&);
-      ~TbZTopAnalyzer();
+      explicit TbZTopAnalyzer_LooseLept(const edm::ParameterSet&);
+      ~TbZTopAnalyzer_LooseLept();
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 //bool muon::isSoftMuon(const reco::Muon & recoMu, const reco::Vertex & vtx);
 
@@ -267,11 +267,11 @@ class TbZTopAnalyzer : public edm::EDAnalyzer {
    //--------------------
    // TH1D*    m_electronCutFlow                         ; 
    TH1D*    elect_pt                                  ;
-   TH1D*    H1_noOfleptons                            ;
-   TH1D*    H1_noOfMuon                               ;
-   TH1D*    H1_noOfElectrons                          ;
+   TH1D*    H1_noOf_tightleptons                      ;
+   TH1D*    H1_noOf_tightMuon                         ;
+   TH1D*    H1_noOf_tightElectrons                    ;
    //--------------------
-   TH1D*    m_muonCutFlow   ;
+   TH1D*    Loose_muonCutFlow                         ;
    TH1D*    inv_Z_mass                                ;
    TH1D*    pT_Z                                      ;
    TH1D*    w_mT                                      ;
@@ -279,7 +279,7 @@ class TbZTopAnalyzer : public edm::EDAnalyzer {
    TH1D*    w_mT_New                                  ;
    //-------------------
    TH1D*    w_m                                       ;
-   TH1D*    m_h_met                                   ;
+   TH1D*    met_Loose                                 ;
    TH1D*    acop                                      ;
    TH1D*    top_mT                                    ;
    TH1D*    top_mT_2nd                                ;
@@ -536,7 +536,7 @@ class TbZTopAnalyzer : public edm::EDAnalyzer {
       
       TH1D*  H1_Elec_Eta_New       ;   TH1D*  H1_Elec_Phi_New        ;     
       // //-------------------------   
-       TH1D* Number_PrimaryVertex  ;  TH1D* Number_tightMuons_Anlyzr ;
+       TH1D* Number_PrimaryVertex_LoseLept  ;  TH1D* Number_tightMuons_Anlyzr ;
          //----
       edm::LumiReWeighting LumiWeights_                    ;
       triggerExpression::Data        m_triggerCache        ;
@@ -607,7 +607,7 @@ TH1D*  H1_jetsPt_is1muon2elec   ;
 //----09-09-14-------------------
 TH1D* TNPUTrue_             ;
 TH1D* TNPUInTime_           ;
-TH1D* TNVTX_                ;
+TH1D* LooseLept_TNVTX_                ;
 TH1D*  RWTTrue_             ;
 TH1D*   RWTInTime_          ;
 TH1D* WGT_                  ;
