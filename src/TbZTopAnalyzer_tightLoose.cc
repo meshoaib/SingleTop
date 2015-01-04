@@ -1,5 +1,5 @@
 //------------- 120914 -------------------------------------------------
-#include "MyAnalysis/TbZ/interface/TbZTopAnalyzer.h"
+#include "MyAnalysis/TbZ/interface/TbZTopAnalyzer_tightLoose.h"
 #include "MyAnalysis/TbZ/interface/MiniEvent.h"
 //----------------------------------------------------------------------
 #include "DataFormats/MuonReco/interface/Muon.h"
@@ -37,13 +37,13 @@ public:
 };
 
 // constructors and destructor
-TbZTopAnalyzer::TbZTopAnalyzer(const edm::ParameterSet& iConfig):m_triggerCache(iConfig.getParameterSet("triggerConfiguration") )
+TbZTopAnalyzer_tightLoose::TbZTopAnalyzer_tightLoose(const edm::ParameterSet& iConfig):m_triggerCache(iConfig.getParameterSet("triggerConfiguration") )
                                           ,m_triggerSelector( triggerExpression::parse( iConfig.getParameter<std::string>("MutriggerSelection") ) )    
                                           ,m_triggerSelector1( triggerExpression::parse( iConfig.getParameter<std::string>("EtriggerSelection") ) )
                                           ,m_triggerSelector2( triggerExpression::parse( iConfig.getParameter<std::string>("MuEGtriggerSelection") ) )
    //    				          ,vertexSrc_(iConfig.getParameter<edm::InputTag>("vertexSrc"))	
        				          
-//TbZTopAnalyzer::TbZTopAnalyzer(const edm::ParameterSet& iConfig)                                                                  
+//TbZTopAnalyzer_tightLoose::TbZTopAnalyzer_tightLoose(const edm::ParameterSet& iConfig)                                                                  
 {
 
    //now do what ever initialization is needed
@@ -92,7 +92,7 @@ if( doPileup_)
 
 }//constructor ends here
 
-TbZTopAnalyzer::~TbZTopAnalyzer()
+TbZTopAnalyzer_tightLoose::~TbZTopAnalyzer_tightLoose()
 
     {
      // do anything here that needs to be done at destruction time
@@ -102,7 +102,7 @@ TbZTopAnalyzer::~TbZTopAnalyzer()
      // member functions
 
 void
-TbZTopAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+TbZTopAnalyzer_tightLoose::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
 
 	//ev_.run     = iEvent.id().run()           ;
@@ -134,17 +134,18 @@ TbZTopAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    bool is2muon      = false      ;
    bool is1elec      = false      ;
    bool is1muon      = false      ;
-   bool isW_e,isW    = false      ;
+   bool isW          = false      ;
+   bool isW_e        = false      ;
    bool isW_New      = false      ; 
    bool isWe_New     = false      ;
    //--------------------------
    /*double dphi       = 1000     ;*/  /*double e_dphi     = 1000  ;*/ double       dphi1     = 1000  ;
    double count2elec = 0.         ;      double var0       =  0.   ;   double       e_dphi1   = 1000  ;                            
-   int    n_muons    = 0.         ;  /*unsigned int nele =  0    ;*/ unsigned int neleNoIso = 0; double nelec      = 0.   ;
+   int    n_muons    = 0.         ;  unsigned int nele , nele_Loose, neleNoIso = 0; double nelec      = 0.   ;
    
-   double nelectrns       = 0.    ;   double nmuons          = 0.    ;
-   double nElecZeroIso    = 0.    ;   double nleptons        = 0.    ; 
-   double nleptonsZeroIso = 0.    ;
+//   double nelectrns       = 0.    ;   double nmuons          = 0.    ;
+///   double nElecZeroIso    = 0.    ;   double nleptons        = 0.    ; 
+   int nLooseElec,nLooseLeptons, nleptonsZeroIso, nMuonsLoose, nElecZeroIso, nleptons, nmuons,nelectrns = 0    ;
 
    double nMuonsNoIso     = 0.    ;   double pt_jets         = 0.    ;
    double Pt_Wmuons       = 0.    ;   double MuonsPt         = 0.    ;
@@ -312,88 +313,131 @@ if(doPileup_)
    std::vector< TLorentzVector > LeadngJetVec     ;
    vec_bjet.clear()                               ; 
    
-   //---22-07-14--- tight lepton --------------------------------------------
-   
-    edm::Handle<std::vector<pat::Electron> > ElecPat     ;
-    iEvent.getByLabel("tightElectrons", ElecPat)         ;// tight electrons 
+		//----------------------------22-07-14--- tight lepton --------------------------------------------
 
-    // iEvent.getByLabel("vetoElectrons", ElecPat)   ;//vetoElectrons
- 
+
+				// ####################################################
+				// #              Electron Collectiona                #
+				// ####################################################
+
+
+     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++   
+	edm::Handle<std::vector<pat::Electron> > ElecPat           ;
+	iEvent.getByLabel("tightElectrons", ElecPat)               ;// tight electrons  
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    edm::Handle<std::vector<pat::Electron> >   ElecNoIso       ;
-    iEvent.getByLabel("tightElectronsZeroIso", ElecNoIso)      ;
-    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    nElecZeroIso   = ElecNoIso->size()                         ;  
-    nelectrns      = ElecPat->size()                           ;
-    //----------------------------------------------------------------------
-    cout<<"pat-tight-electrons"<<nelectrns<<endl               ;
-    cout<<"tight-Electrons-ZeroISo: "<<nElecZeroIso<<endl      ;
+	edm::Handle<std::vector<pat::Electron> >   ElecNoIso       ;
+	iEvent.getByLabel("tightElectronsZeroIso", ElecNoIso)      ; // tight electrons with zero isolation
+    // &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+	edm::Handle<std::vector<pat::Electron> > ElecLoose         ;
+	iEvent.getByLabel("vetoElectrons", ElecLoose)              ;// Loose electrons 
+    // &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
-    vector<pat::Electron> m_preSel_Electrons                   ;  
 
-   if(nelectrns > 0)
-   H1_noOfElectrons->Fill(nelectrns)                           ;  
-   
+	// --------------------------------------------------------------------
+	nLooseElec     = ElecLoose ->size()                        ;
+	nElecZeroIso   = ElecNoIso ->size()                        ;  
+	nelectrns      = ElecPat   ->size()                        ;
+	//-------------------------------------------------------------------------
+
+	cout<<"pat-tight-electrons"<<nelectrns<<endl               ;
+	cout<<"tight-Electrons-ZeroISo: "<<nElecZeroIso<<endl      ;
+	cout<< "Loose-Electrons: "<<nLooseElec <<endl              ;	
+
+	// ********************** vector used for electron Pairing **********
+	vector<pat::Electron> m_preSel_Electrons              ;  
+	// *******************************************************************
+	
+	if(nelectrns > 0)
+	H1_noOfElectrons->Fill(nelectrns)                     ;  
+
+
+			//################################################################
+		  	//#                       Muons Collections                      #
+			//################################################################
+	
+	// ------------------------------------------------------------
 	Handle<vector <pat::Muon> > muonColl                   ;
-	iEvent.getByLabel("tightMuons", muonColl )             ;
-	vector<pat::Muon> m_preSel_muon                        ;
-
+	iEvent.getByLabel("tightMuons", muonColl )             ; // tight muons 
+	// ------------------------------------------------------------
+	
+	//&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 	Handle<vector <pat::Muon> > muonNoIso                  ;
-	iEvent.getByLabel("tightMuonsZeroIso", muonNoIso)      ;
+	iEvent.getByLabel("tightMuonsZeroIso", muonNoIso)      ; // tight muons with zero isolations
+	//&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+	
+	//***********************************************************
+	Handle<vector <pat::Muon> > LooseMuonColl              ;
+	iEvent.getByLabel("vetoMuons", LooseMuonColl )         ; // Loose Muons        
+	//&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+        
 
-	cout<<"Muons_Size: " << muonColl->size() <<endl        ;
+	// ***** vector used for muons Pairing ************************
+	vector<pat::Muon> m_preSel_muon                        ;
+	// ************************************************************
 
-        cout<<"Muons_size_NoIso: "<< muonNoIso->size()<<endl   ;	
-
+	cout<<" Muons_Size_tight: " << muonColl->size() <<endl        ;
+	cout<<" Muons_size_tightNoIso: "<< muonNoIso->size()<<endl    ;	
+	cout<<" Muons_size_Loose: "<< LooseMuonColl->size()<<endl     ;
+	
+	nMuonsLoose = LooseMuonColl->size()                    ;
 	nMuonsNoIso = muonNoIso->size()                        ;
-	cout<<"Muons_size_NoIso: "<<nMuonsNoIso<<endl          ;
-
 	nmuons      = muonColl->size()                         ;
 
 	if(nmuons > 0)
 	H1_noOfMuon->Fill(nmuons)                              ; 
-	   
-	nleptons          =  nelectrns + nmuons                ;
+	
+	// **************************************************************
+	// *   Leptons Collection                                       *
+	// **************************************************************
+	
    
-	nleptonsZeroIso   = nMuonsNoIso + nElecZeroIso         ;
-  
-	cout<<"nleptonsZeroIso: "<<nleptonsZeroIso <<endl      ;   
+	nleptons          =  nelectrns + nmuons                ;
+   	nleptonsZeroIso   = nMuonsNoIso + nElecZeroIso         ;
+	nLooseLeptons     = nMuonsLoose + nLooseElec           ;
+
+	if(nleptonsZeroIso > 0)
+	H1_nleptonsZeroIso ->Fill(nleptonsZeroIso)             ;
+	//cout<<"nleptonsZeroIso: "<<nleptonsZeroIso <<endl    ;   
 	if(nleptons > 0)                                     
 	H1_noOfleptons  -> Fill(nleptons)                      ;
+	if(nLooseLeptons > 0)
+	H1_nLooseLeptons -> Fill(nLooseLeptons )               ;
      
-   // if(nleptons < 3.) return                        ; 
-   cout<<"Number_Of_Leptons == "<<nleptons<<endl        ;   
-   //=========== VERTEX ==================================================
-   
-   Handle< std::vector<reco::Vertex> > NEWvertices                            ;
-   iEvent.getByLabel("offlinePrimaryVertices", NEWvertices)                   ;
+	// if(nleptons < 3.) return                            ; 
+	cout<<"Number_Of_Leptons == "<<nleptons<<endl          ;   
 
-   if (!NEWvertices.isValid()) return                                         ;       
-   // require in the event that there is at least one reconstructed vertex
-  if(NEWvertices->size()<=0) return                                           ;
-  //vector<reco::Vertex>::const_iterator itv                                  ;
-   int NVtx_old = 0                                                           ;
-   // now, count vertices
-   for (itv = NEWvertices->begin(); itv != NEWvertices->end(); ++itv)
-   {      
-      if(itv->ndof()< 4)                   continue                           ;
-      if(fabs(itv->z())> 24.0)             continue                           ;
-      if(fabs(itv->position().rho())>2.0)  continue                           ;      
-      ++NVtx_old                                                              ;
-   }
+	//=========== VERTEX ==================================================
+   
+	Handle< std::vector<reco::Vertex> > NEWvertices                            ;
+	iEvent.getByLabel("offlinePrimaryVertices", NEWvertices)                   ;
 
-      //Number_PrimaryVertex->Fill(NVtx_old)                                  ;
-      Number_PrimaryVertex ->Fill(NVtx_old,MyWeight)                          ;
+	if (!NEWvertices.isValid()) return                                         ;       
+	// require in the event that there is at least one reconstructed vertex
+	if(NEWvertices->size()<=0) return                                          ;
+	//vector<reco::Vertex>::const_iterator itv                                 ;
+	int NVtx_old = 0                                                           ;
+	// now, count vertices
+	for (itv = NEWvertices->begin(); itv != NEWvertices->end(); ++itv)
+	{      
+	if(itv->ndof()< 4)                   continue                           ;
+	if(fabs(itv->z())> 24.0)             continue                           ;
+	if(fabs(itv->position().rho())>2.0)  continue                           ;      
+	++NVtx_old                                                              ;
+	}
+
+	//Number_PrimaryVertex->Fill(NVtx_old)                                  ;
+        Number_PrimaryVertex ->Fill(NVtx_old,MyWeight)                          ;
    
-      if(NVtx_old < 1) return                                                 ;
+        if(NVtx_old < 1) return                                                 ;
    
-      m_muonCutFlow     ->Fill(1)                                             ; // Events after primary vertex cut     
+        m_muonCutFlow     ->Fill(1)                                             ; // Events after primary vertex cut     
   
-  //###############  3 tight leptons #####################################################
+	//###############  3 leptons conditions  #####################################################
 
 // if(nleptons == 3 && nleptons != 4 )
  //if(nleptons > 1 && nleptons < 4 && nleptonsZeroIso > 2)   // 31-12-14
- if(nleptonsZeroIso == 3 && nleptonsZeroIso != 4)
+ //if(nleptonsZeroIso == 3 && nleptonsZeroIso != 4)
+ if(nleptons > 1 && nleptons < 4 && nLooseLeptons > 2) // at-least two tight leptons and two loose leptons 
    {
 
     //cout<<"Nleptons after cut: "<<nleptons<<endl                                                                  ;
@@ -437,13 +481,20 @@ if(doPileup_)
 
 //========== MET PART END======================================================
         
-      pat::ElectronCollection myelectron_new( ElecPat->begin(), ElecPat->end() )         ;
-      pat::ElectronCollection myelectron_NoIso( ElecNoIso->begin(), ElecNoIso->end() )   ;
+      pat::ElectronCollection myelectron_new   ( ElecPat->begin(), ElecPat->end()     )   ;
+      pat::ElectronCollection myelectron_NoIso ( ElecNoIso->begin(), ElecNoIso->end() )   ;
+      pat::ElectronCollection myelectron_Loose ( ElecLoose->begin(), ElecLoose->end() )   ;
+	
     
-      //nele      = myelectron_new.size()                                                  ;  // originally we are using this 
-      neleNoIso = myelectron_NoIso.size()                                                ; 
-    
-      sort(myelectron_new.begin(), myelectron_new.end(), PtGreater())                    ;
+	nele      = myelectron_new.size()                                                 ;  // originally we are using this 
+      //neleNoIso = myelectron_NoIso.size()                                               ; 
+	nele_Loose      = myelectron_Loose.size()                                         ;
+
+	cout <<" nele: " <<nele <<endl                                                    ;
+	cout <<" nele_Loose: " <<nele_Loose<<endl                                         ;
+
+	sort(myelectron_Loose.begin(),myelectron_Loose.end(),PtGreater())                 ;
+	sort(myelectron_new.begin(), myelectron_new.end(), PtGreater())                   ;
 
    
       unsigned int JJ = 0                                        ;
@@ -683,10 +734,10 @@ if(doPileup_)
       double relIso_chargedHad        = 100.                            ;
 
           
-         // for(unsigned  ni=0;  ni< nele ; ++ni)
-	 for(unsigned  ni=0;  ni< neleNoIso; ++ni)
+         for(unsigned  ni=0;  ni< nele ; ++ni)
+	// for(unsigned  ni=0;  ni< neleNoIso; ++ni)
          {            
-  	   edm::Ptr<pat::Electron> myElectron(&myelectron_NoIso,ni)             ;
+  	   edm::Ptr<pat::Electron> myElectron(&myelectron_new,ni)             ;
 
             if(met->pt()< metPtCut_)          	  continue                      ;
    	    if(myElectron->pt() < ElecPtCut_)     continue                      ;
@@ -752,31 +803,32 @@ if(doPileup_)
          if(delta_R_jet_elec < 0.5 ) continue ;
          double DeltaCorrectedIso = 0.        ;
 
-         // for(unsigned int mi=0;mi < muonColl->size(); ++mi)
-		 for(unsigned int mi=0;mi < muonNoIso->size(); ++mi)
+          for(unsigned int mi=0;mi < muonColl->size(); ++mi)
+	 //for(unsigned int mi=0;mi < muonNoIso->size(); ++mi)
          {
-           // edm::Ptr<pat::Muon> myMuon(muonColl,mi)                   ;
+
+            edm::Ptr<pat::Muon> myMuon(muonColl,mi)                         ;
 		   
-		   edm::Ptr<pat::Muon> myMuon(muonNoIso, mi)                    ;
+	 // edm::Ptr<pat::Muon> myMuon(muonNoIso, mi)                       ;
 
 	      cout<<"deltaBeta_Correction: "<<myMuon->dB()<<endl            ;
 
 	   double VertexDz  = myMuon->userFloat("VertexDz")                 ;
 
-	  // double RhoCorrectedIso = myMuon->userFloat("RhoCorrectedIso")     ;
+	  // double RhoCorrectedIso = myMuon->userFloat("RhoCorrectedIso")  ;
 
 	   DeltaCorrectedIso         = myMuon->userFloat("DeltaCorrectedIso") ;
 
 	   double VertexDxy          = myMuon->userFloat("VertexDxy")         ;
 
-	   cout<<"VertexDxy_New_161214: "<<VertexDxy<<endl                   ;
-	   cout<<"DeltaCorrectedIso_New_161214: "<<DeltaCorrectedIso<<endl   ;
-	   ///cout<<"RhoCorrectedIso_New_161214: "<<RhoCorrectedIso<<endl       ;
-	   cout<<"VertexDz_New_161214: " <<VertexDz<<endl                    ;
+	   cout<<"VertexDxy_New_161214: "<<VertexDxy<<endl                    ;
+	   cout<<"DeltaCorrectedIso_New_161214: "<<DeltaCorrectedIso<<endl    ;
+	   ///cout<<"RhoCorrectedIso_New_161214: "<<RhoCorrectedIso<<endl     ;
+	   cout<<"VertexDz_New_161214: " <<VertexDz<<endl                     ;
 
-	   if(DeltaCorrectedIso > 0.12 ) continue                            ;
+	   if(DeltaCorrectedIso > 0.12 ) continue                             ;
 
-           cout<<" DeltaCorrectedIso_after_cut: "<< DeltaCorrectedIso <<endl ;
+           cout<<" DeltaCorrectedIso_after_cut: "<< DeltaCorrectedIso <<endl  ;
 
 	   DeltaCorrectedIso_ ->Fill(DeltaCorrectedIso)                      ;
 	// --------------------------------------------------
@@ -855,11 +907,11 @@ if(doPileup_)
          double relIso_chargedHad1      = 100.               ;
 
 
-         // for(unsigned  ni=0;  ni< nele ; ++ni)
-	 for(unsigned  ni=0;  ni< neleNoIso ; ++ni)
+          for(unsigned  ni=0;  ni< nele ; ++ni)
+	// for(unsigned  ni=0;  ni< neleNoIso ; ++ni)
          {
 		                                                                             
-	edm::Ptr<pat::Electron>  myElectron(&myelectron_NoIso,ni)                    ;
+	edm::Ptr<pat::Electron>  myElectron(&myelectron_new,ni)                      ;
     	if(met->pt()< metPtCut_) continue                                            ;
         double RhoCorrectedIso1 = myElectron->userFloat("RhoCorrectedIso")           ;
                                                                                      
@@ -979,9 +1031,10 @@ if(doPileup_)
            nelec++                                                                        ; 
            
           cout<<"Number of Electrons: "<<nelec<<endl                                      ; 
-          m_preSel_Electrons.push_back(ElecNoIso->at(ni))                                 ;
+         // m_preSel_Electrons.push_back(ElecNoIso->at(ni))                               ;
 
-          // m_preSel_Electrons.push_back(ElecPat->at(ni))                                ; 
+           m_preSel_Electrons.push_back(ElecPat->at(ni))                                  ; 
+
           //=============================================================================
          // cout<<"retrieved preselected electrons with size INSIDE TOP Analyser"           ;
           // cout<<ElecPat->size() <<" size_m_preSel_Electrons : "<< m_preSel_Electrons.size()<<endl        ; 
@@ -1054,16 +1107,19 @@ if(doPileup_)
        truewElec2.Clear()                                                                         ;
        if(!is2elec) is1elec = true                                                                ;
      
-//++++++++++++++++++++loop over non-isolated electrons ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		//			loop Over Loose electrons                                   +
+		//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+		
+
 	  if(is2elec == true)
 	  {
-	    for(unsigned int k=0; k<neleNoIso; ++k)
+	    for(unsigned int k=0; k< nele_Loose; ++k)
 		{	
      	         if(met->pt()< metPtCut_)              continue                                 ;
-     	         if( k ==  (unsigned) minE_pairIndex.first || k == (unsigned) minE_pairIndex.second ) continue ;
-
-
-                 edm::Ptr<pat::Electron> ElectronNoISo(ElecNoIso,k)                             ;
+     	        // if( k ==  (unsigned) minE_pairIndex.first || k == (unsigned) minE_pairIndex.second ) continue ;
+     	        
+                 edm::Ptr<pat::Electron> ElectronLoose (ElecNoIso,k)                             ;
 
 		 if(ElectronNoISo->pt() < ElecPtCut_)     continue                              ;
 		 if(ElectronNoISo->eta()> ElecEtaCut_)    continue                              ;
@@ -2405,7 +2461,7 @@ if(nelectrns ==3 && is2elec && isWe_New && nmuons ==0  &&  ELECCTRON_MSS >0. && 
 
 
 void
-TbZTopAnalyzer::beginJob()
+TbZTopAnalyzer_tightLoose::beginJob()
 {
  edm::Service<TFileService> fs1;
  //histos for cut flow
@@ -2826,11 +2882,13 @@ H1_Wtrans_NoISoElec         = fs1 ->make<TH1D> ("H1_Wtrans_NoISoElec","H1_Wtrans
 
 H1_NoIsoElec_Pt_aftrCut     = fs1->make<TH1D> ("H1_NoIsoElec_Pt_aftrCut","H1_NoIsoElec_Pt_aftrCut",40,0.,400.)    ;
 H1_NoIsoElec_Eta_aftrCut    = fs1->make<TH1D> ("H1_NoIsoElec_Eta_aftrCut","H1_NoIsoElec_Eta_aftrCut", 100.0,-3,3)  ;
-H2_NoIsoElec_EtaPt_aftrCut  = fs1->make<TH2D> ("H2_NoIsoElec_EtaPt_aftrCut","H2_NoIsoElec_EtaPt_aftrCut",40,0,400,100.,-3,3)       ;
+H2_NoIsoElec_EtaPt_aftrCut  = fs1->make<TH2D> ("H2_NoIsoElec_EtaPt_aftrCut","H2_NoIsoElec_EtaPt_aftrCut",40,0,400,100.,-3,3)     ;
 
-H2_IsoElecPtEta_AftrOverlap = fs1->make<TH2D> ("H2_IsoElecPtEta_AftrOverlap","H2_IsoElecPtEta_AftrOverlap",40,0,400,100.,-3,3);
-H2_NonIsoMuPtEta_AftrCut    =fs1->make<TH2D> ("H2_NonIsoMuPtEta_AftrCut","H2_NonIsoMuPtEta_AftrCut",40,0,400,100.,-3,3);
-
+H2_IsoElecPtEta_AftrOverlap = fs1->make<TH2D> ("H2_IsoElecPtEta_AftrOverlap","H2_IsoElecPtEta_AftrOverlap",40,0,400,100.,-3,3)   ;
+H2_NonIsoMuPtEta_AftrCut    = fs1->make<TH2D> ("H2_NonIsoMuPtEta_AftrCut","H2_NonIsoMuPtEta_AftrCut",40,0,400,100.,-3,3)         ;
+// *********************************** new histos **********************************
+H1_nleptonsZeroIso         = fs1->make<TH1D> ("H1_nleptonsZeroIso","H1_nleptonsZeroIso",10, 0, 10);
+H1_nLooseLeptons            = fs1->make<TH1D> ("H1_nLooseLeptons","H1_nLooseLeptons",10, 0, 10);
 //H1_elec_eta                  = fs1->make<TH1D> ("H1_elec_eta","H1_elec_eta", 100.0,-3,3)                      ;
 //H1_elec_phi                  = fs1->make<TH1D> ("H1_elec_phi","H1_elec_phi", 100.0,-3,3)                      ;
 
@@ -2840,11 +2898,14 @@ H2_NonIsoMuPtEta_AftrCut    =fs1->make<TH2D> ("H2_NonIsoMuPtEta_AftrCut","H2_Non
 
 //H1_elec_eta        ->Sumw2()   ;
 //H1_elec_phi        ->Sumw2()   ;
-H2_NonIsoMuPtEta_AftrCut ->Sumw2();
-H2_IsoElecPtEta_AftrOverlap ->Sumw2();
-H1_NoIsoElec_Eta_aftrCut->Sumw2();
-H2_NoIsoElec_EtaPt_aftrCut->Sumw2();
-H1_NoIsoElec_Pt_aftrCut ->Sumw2();
+
+H1_nleptonsZeroIso       ->Sumw2()     ;
+H1_nLooseLeptons         ->Sumw2()     ;
+H2_NonIsoMuPtEta_AftrCut ->Sumw2()     ;
+H2_IsoElecPtEta_AftrOverlap ->Sumw2()  ;
+H1_NoIsoElec_Eta_aftrCut->Sumw2()      ;
+H2_NoIsoElec_EtaPt_aftrCut->Sumw2()    ;
+H1_NoIsoElec_Pt_aftrCut ->Sumw2()      ;
 
 H1_Wtrans_NoISo     ->Sumw2()  ;
 H1_Wtrans_NoISoElec ->Sumw2()  ;
@@ -3260,7 +3321,7 @@ inv_Z_mass_is2elec1muon_Backgrnd_0bjet ->Sumw2() ;
       
 // ------------ method called once each job just after ending the event loop  ------------
 void
-TbZTopAnalyzer::endJob()
+TbZTopAnalyzer_tightLoose::endJob()
 {
        //------
      
@@ -3624,27 +3685,27 @@ TbZTopAnalyzer::endJob()
 
 // ------------ method called when starting to processes a run  ------------
 void
-TbZTopAnalyzer::beginRun(edm::Run const&, edm::EventSetup const&)
+TbZTopAnalyzer_tightLoose::beginRun(edm::Run const&, edm::EventSetup const&)
 {
 }
 // ------------ method called when ending the processing of a run  ------------
 void
-TbZTopAnalyzer::endRun(edm::Run const&, edm::EventSetup const&)
+TbZTopAnalyzer_tightLoose::endRun(edm::Run const&, edm::EventSetup const&)
 {
 }
 // ------------ method called when starting to processes a luminosity block  ------------
 void
-TbZTopAnalyzer::beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
+TbZTopAnalyzer_tightLoose::beginLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
 {
 }
 // ------------ method called when ending the processing of a luminosity block  ------------
 void
-TbZTopAnalyzer::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
+TbZTopAnalyzer_tightLoose::endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&)
 {
 }
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
-TbZTopAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) 
+TbZTopAnalyzer_tightLoose::fillDescriptions(edm::ConfigurationDescriptions& descriptions) 
 {
   //The following says we do not know what parameters are allowed so do no validation
   // Please change this to state exactly what you do use, even if it is no parameters
@@ -3654,4 +3715,4 @@ TbZTopAnalyzer::fillDescriptions(edm::ConfigurationDescriptions& descriptions)
   
 }
 //define this as a plug-in
-DEFINE_FWK_MODULE(TbZTopAnalyzer);
+DEFINE_FWK_MODULE(TbZTopAnalyzer_tightLoose);
