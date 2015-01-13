@@ -22,8 +22,8 @@
 
 
 */
-// Class:      TbZTopAnalyzer
-/**\class TbZ TbZTopAnalyzer.cc MyAnalysis/TbZ/src/TbZTopAnalyzer.cc
+// Class:      TbZTopAnalyzer_leptonsZeroIso
+/**\class TbZ TbZTopAnalyzer_leptonsZeroIso.cc MyAnalysis/TbZ/src/TbZTopAnalyzer.cc
  Description: [This is a association study of Z-boson with Single top quark and this class is going to recontstruct top from 3 leptons,atleast 2 b
  Implementation:
      [Notes on implementation]
@@ -150,10 +150,10 @@ using namespace std;
 using namespace edm;
 using namespace reco;
 
-class TbZTopAnalyzer : public edm::EDAnalyzer {
+class TbZTopAnalyzer_leptonsZeroIso : public edm::EDAnalyzer {
    public:
-      explicit TbZTopAnalyzer(const edm::ParameterSet&);
-      ~TbZTopAnalyzer();
+      explicit TbZTopAnalyzer_leptonsZeroIso(const edm::ParameterSet&);
+      ~TbZTopAnalyzer_leptonsZeroIso();
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 //bool muon::isSoftMuon(const reco::Muon & recoMu, const reco::Vertex & vtx);
 
@@ -615,7 +615,7 @@ TH1D* WeightVsNint_         ;
 //----
 TH1D* h_bJetsEta            ;
 
-TH1D* H1_NoIsoElec_Pt       ;
+TH1D* H1_ZeroIsoElec_Pt       ;
 TH1D* H1_IsoElec_Pt         ;
 //--- 23-09-14 -------------------
 
@@ -628,19 +628,18 @@ TH1D* deltaR_ElecMu_Cut     ;
 
 TH1D* RhoCorrectedIso_      ;
 TH1D* DeltaCorrectedIso_    ;
-TH1D* H1_NoIsoElec_Eta      ;
-TH2D* H2_NoIsoElec_EtaPt    ;
+TH1D* H1_ZeroIsoElec_Eta    ;
+TH2D* H2_ZeroIsoElec_EtaPt  ;
 TH2D* H2_IsoElecPt_Eta      ;
 TH2D* H2_muonNoIsoPt_Eta    ;
 TH2D* H2_IsoMuonPt_Eta      ;
-TH1D* H1_Wtrans_NoISo       ;
-TH1D* H1_Wtrans_NoISoElec   ;
+TH1D* H1_Wtrans_NonIsoMu    ;
+TH1D* H1_Wtrans_NonISoElec  ;
 
-TH1D* H1_NoIsoElec_Pt_aftrCut    ;
-TH1D* H1_NoIsoElec_Eta_aftrCut   ;
-TH2D* H2_NoIsoElec_EtaPt_aftrCut ;
+TH1D* H1_NonIsoElec_Pt_aftrCut    ;
+TH1D* H1_NonIsoElec_Eta_aftrCut   ;
+TH2D* H2_NonIsoElec_EtaPt_aftrCut ;
 TH2D* H2_IsoElecPtEta_AftrOverlap ;
 TH2D* H2_NonIsoMuPtEta_AftrCut    ;
-// --------
     };
     

@@ -615,7 +615,7 @@ TH1D* WeightVsNint_         ;
 //----
 TH1D* h_bJetsEta            ;
 
-TH1D* H1_LooseElec_Pt       ;
+TH1D* H1_LooseElecPt_dRCut       ;
 TH1D* H1_IsoElec_Pt         ;
 //--- 23-09-14 -------------------
 
@@ -628,23 +628,43 @@ TH1D* deltaR_ElecMu_Cut     ;
 
 TH1D* RhoCorrectedIso_      ;
 TH1D* DeltaCorrectedIso_    ;
+
 TH1D* H1_LooseElec_Eta      ;
-TH2D* H2_LooseElec_EtaPt    ;
+
+TH2D* H2_LooseElec_EtaPt_dRCut ;
+
 TH2D* H2_IsoElecPt_Eta      ;
-TH2D* H2_LooseMuPt_Eta    ;
+
+TH2D* H2_LooseMuPt_Eta      ;
 TH2D* H2_IsoMuonPt_Eta      ;
-TH1D* H1_Wtrans_LooseMu       ;
+TH1D* H1_Wtrans_LooseMu     ;
 TH1D* H1_Wtrans_LooseElec   ;
 
-TH1D* H1_LooseElec_Pt_aftrCut    ;
-TH1D* H1_LooseElec_Eta_aftrCut   ;
-TH2D* H2_LooseElec_EtaPt_aftrCut ;
+TH1D* H1_LooseElecPt_RhoCut    ;
+TH1D* H1_LooseElec_Eta_RhoCut   ;
+TH2D* H2_LooseElec_EtaPt_RhoCut ;
 TH2D* H2_IsoElecPtEta_AftrOverlap ;
-TH2D* H2_NonIsoMuPtEta_AftrCut    ;
+
+TH2D* H2_LooseMuPtEta_AftrCut    ;
 
 // ------------------------------
 TH1D* H1_nleptonsZeroIso         ;
 TH1D* H1_nLooseLeptons           ;
-
+//----
+TH1D* H1_LooseElecPt_bfrdRCut    ;
+TH1D* H1_LooseElecEta_bfrdRCut   ;
+TH2D* H2_LooseElecEtaPt_bfrdRCut ;
+//---
+TH1D* H1_Wtrans_LooseMuCounter ;
+TH1D* H1_Wtrans_LooseECounter  ;
+TH1D* H1_MET_LooseElec         ;
+TH1D* H1_MET_LooseMu           ;
+//---
+TH1D* H1_MET_Loosetight        ;
+TH1D* H1_Hello_MetPt           ;
+//---
+TH1D* H1_LooseMu_Pt            ;
+TH1D* H1_LooseMu_Eta           ;
+TH1D* H1_LooseMu_Phi           ;
     };
     
