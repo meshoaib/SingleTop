@@ -893,9 +893,9 @@ if(doPileup_)
 	edm::Ptr<pat::Electron>  myElectron(&myLooseElec,ni)                           ;
     	if(met->pt()< metPtCut_) continue                                            ;
         double RhoCorrectedIso1 = myElectron->userFloat("RhoCorrectedIso")           ;
-         double Superclstr = myElectron-> superCluster.eta;                                                                           
-	cout<<"Superclstr: "<<Superclstr<<endl;	
-if(RhoCorrectedIso1 > 0.12) continue                                         ;
+        // double Superclstr = myElectron-> superCluster.eta;                                                                           
+	//cout<<"Superclstr: "<<Superclstr<<endl;	
+	if(RhoCorrectedIso1 > 0.12) continue                                         ;
 	cout<<" RhoCorrectedIso1_after_cut: " <<RhoCorrectedIso1 <<endl              ;
 
         var1           =  myElectron -> pfIsolationVariables().chargedHadronIso      ;
