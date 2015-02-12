@@ -95,10 +95,22 @@ process.source = cms.Source("PoolSource",
 
 
 #	"file:/afs/cern.ch/work/m/meshoaib/PatAnalysis/CMSSW_5_3_21/src/MyAnalysis/TbZ/singleTopSkim_TChannel.root"	
+	
 	#SignalMC
-#	"file:/afs/cern.ch/work/m/meshoaib/PatAnalysis/CMSSW_5_3_21/src/MyAnalysis/TbZ/singleTopSkim_TChannel_77_1_EL1.root"
-	"file:/afs/cern.ch/work/m/meshoaib/PatAnalysis/CMSSW_5_3_21/src/MyAnalysis/TbZ/singleTopSkim_TChannel_Synchro.root"
+	"file:/afs/cern.ch/work/m/meshoaib/PatAnalysis/CMSSW_5_3_21/src/MyAnalysis/TbZ/singleTopSkim_TChannel_77_1_EL1.root"
+	
+	#QCD 
+#"file:/afs/cern.ch/work/m/meshoaib/TupleSingleTop/CMSSW_5_3_11/src/TopQuarkAnalysis/SingleTop/test/crab_QCD_TestTuple/res/singleTopSkim_TChannel_100_1_TQr.root"
+
+	#"file:/afs/cern.ch/work/m/meshoaib/PatAnalysis/CMSSW_5_3_21/src/MyAnalysis/TbZ/NoMetJetCorresingleTopSkim_TChannel.root"
+	#"file:/afs/cern.ch/work/m/meshoaib/PatAnalysis/CMSSW_5_3_21/src/MyAnalysis/TbZ/WithAppliedCorr_singleTopSkim_TChannel.root"
+#	"file:/afs/cern.ch/work/m/meshoaib/PatAnalysis/CMSSW_5_3_21/src/MyAnalysis/TbZ/singleTopSkim_TChannel_Synchro.root"
 	#input from EOS directly
+
+	#For-Systematic Checking 
+	#"file:/afs/cern.ch/work/m/meshoaib/TupleSingleTop/CMSSW_5_3_11/src/TopQuarkAnalysis/SingleTop/test/WithoutJetEn_singleTopSkim_TChannel.root"
+	#"file:/afs/cern.ch/work/m/meshoaib/TupleSingleTop/CMSSW_5_3_11/src/TopQuarkAnalysis/SingleTop/test/JetEnUp_singleTopSkim_TChannel.root"
+	#"file:/afs/cern.ch/work/m/meshoaib/TupleSingleTop/CMSSW_5_3_11/src/TopQuarkAnalysis/SingleTop/test/JetEnDown_singleTopSkim_TChannel.root"
 
 
     )
@@ -180,6 +192,210 @@ print "after"
 #process.Acceptance  = cms.EDAnalyzer('tbz_Acceptance')
 #process.topFromWb = cms.EDAnalyzer('t2Wb')
 #process.tbZ = cms.EDAnalyzer('tbZ_Final')
+
+
+print "Before top analyzer with loose & tight"
+
+
+process.topAnaLoosetight = cms.EDAnalyzer('TbZTopAnalyzer_tightLoose',
+
+MutriggerSelection   = cms.string('(HLT_Mu17_Mu8_* OR HLT_Mu17_TkMu8_*)'),
+MuEGtriggerSelection = cms.string('(HLT_Mu17_Ele8_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_* OR HLT_Mu8_Ele17_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_*)'),
+EtriggerSelection    = cms.string('(HLT_Ele17_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_Ele8_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_*)'),
+
+triggerConfiguration =  cms.PSet(
+  hltResults = cms.InputTag('TriggerResults','','HLT'),
+  l1tResults = cms.InputTag(''),
+  daqPartitions = cms.uint32(1),
+  l1tIgnoreMask = cms.bool( False ),
+  l1techIgnorePrescales = cms.bool( False ),
+  throw  = cms.bool( True )
+),
+
+ #    Producer     = cms.InputTag("myBJetsProducer")              ,
+                               beamSpotInputTag  = cms.InputTag("offlineBeamSpot")             ,
+                               primaryVertexInputTag = cms.InputTag("offlinePrimaryVertices")  ,
+
+                               # rhoIsoInputTag   = cms.InputTag("kt6PFJetsForIsolation","rho"),
+
+                               # isoValInputTags =  cms.VInputTag(cms.InputTag('elPFIsoValueCharged03PFIdPFIso'),
+                               # cms.InputTag('elPFIsoValueGamma03PFIdPFIso'),
+                               #  cms.InputTag('elPFIsoValueNeutral03PFIdPFIso')),
+
+
+                                metPtCut      = cms.double(30.)                                    ,# before it was 30 GeV
+                                vertexSrc     = cms.InputTag("offlinePrimaryVertices")             ,
+
+                                BtagEtaCut    = cms.double(2.4)                                    ,
+                                BtagPtCut     = cms.double(30)                                     ,
+
+                                #BtagDiscrCut  = cms.double(0.679)                                  ,
+                               # DPHiENue      = cms.double(1.0)                                    ,
+                                DPHiMuNue     = cms.double(1.0)                                    ,
+                                MaxZMass      = cms.double(102.0)                                  ,
+                                MinZMAss      = cms.double(78.0)                                   ,
+                                JetsPtCut     = cms.double(30.)                                    ,
+                                JetsEtaCut    = cms.double(3.0)                                    ,
+                                ElecPtCut     = cms.double(20.)                                    ,
+                                ElecEtaCut    = cms.double(2.5)                                    ,
+                                muonPtCut     = cms.double(20)                                     ,
+                                muonEtaCut    = cms.double(2.4)                                    ,
+                                doTruthMatch  = cms.bool(False)                                    ,
+                                #realdata      = cms.bool(True)                                    ,
+                                realdata      = cms.bool(False)                                    ,
+                                doPileup      = cms.bool(False)                                    ,
+                                printDebug    = cms.bool(True)
+
+                              )
+print "After top analyzer with Loose & tight Lept"
+
+
+print "Beffore top analyzer with Loose Lept"
+
+############# top analyzer with Loose #####
+
+process.topAnaLooseLept = cms.EDAnalyzer('TbZTopAnalyzer_LooseLept',
+
+MutriggerSelection   = cms.string('(HLT_Mu17_Mu8_* OR HLT_Mu17_TkMu8_*)'),
+MuEGtriggerSelection = cms.string('(HLT_Mu17_Ele8_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_* OR HLT_Mu8_Ele17_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_*)'),
+EtriggerSelection    = cms.string('(HLT_Ele17_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_Ele8_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_*)'),
+
+triggerConfiguration =  cms.PSet(
+  hltResults = cms.InputTag('TriggerResults','','HLT'),
+  l1tResults = cms.InputTag(''),
+  daqPartitions = cms.uint32(1),
+  l1tIgnoreMask = cms.bool( False ),
+  l1techIgnorePrescales = cms.bool( False ),
+  throw  = cms.bool( True )
+),
+
+
+			   #    Producer     = cms.InputTag("myBJetsProducer")              ,
+                               beamSpotInputTag  = cms.InputTag("offlineBeamSpot")             ,
+                               primaryVertexInputTag = cms.InputTag("offlinePrimaryVertices")  ,
+
+                               # rhoIsoInputTag   = cms.InputTag("kt6PFJetsForIsolation","rho"),
+
+                               # isoValInputTags =  cms.VInputTag(cms.InputTag('elPFIsoValueCharged03PFIdPFIso'),
+                               # cms.InputTag('elPFIsoValueGamma03PFIdPFIso'),
+                               #  cms.InputTag('elPFIsoValueNeutral03PFIdPFIso')),
+
+
+                                metPtCut      = cms.double(30.)                                    , # before it was 30. GeV
+                                vertexSrc     = cms.InputTag("offlinePrimaryVertices")             ,
+
+                                BtagEtaCut    = cms.double(2.4)                                    ,
+                                BtagPtCut     = cms.double(30)                                     ,
+
+                                #BtagDiscrCut  = cms.double(0.679)                                  ,
+                               # DPHiENue      = cms.double(1.0)                                    ,
+                                DPHiMuNue     = cms.double(1.0)                                    ,
+                                MaxZMass      = cms.double(102.0)                                  ,
+                                MinZMAss      = cms.double(78.0)                                   ,
+                                JetsPtCut     = cms.double(30.)                                    ,
+                                JetsEtaCut    = cms.double(3.0)                                    ,
+                                ElecPtCut     = cms.double(20.)                                    ,
+                                ElecEtaCut    = cms.double(2.5)                                    ,
+                                muonPtCut     = cms.double(20)                                     ,
+                                muonEtaCut    = cms.double(2.4)                                    ,
+                                doTruthMatch  = cms.bool(False)                                    ,
+                                #realdata      = cms.bool(True)                                    ,
+                                realdata      = cms.bool(False)                                    ,
+                                doPileup      = cms.bool(False)                                    ,
+                                printDebug    = cms.bool(True)
+
+                              )
+print "After top analyzer with Loose Lept"
+###### top Analyzer using tight leptons with Zero Isolation ######################
+
+process.topAna_lepZeroIso = cms.EDAnalyzer('TbZTopAnalyzer_leptonsZeroIso',
+
+
+
+MutriggerSelection   = cms.string('(HLT_Mu17_Mu8_* OR HLT_Mu17_TkMu8_*)'),
+MuEGtriggerSelection = cms.string('(HLT_Mu17_Ele8_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_* OR HLT_Mu8_Ele17_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_*)'),
+EtriggerSelection    = cms.string('(HLT_Ele17_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_Ele8_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_*)'),
+
+triggerConfiguration =  cms.PSet(
+  hltResults = cms.InputTag('TriggerResults','','HLT'),
+  l1tResults = cms.InputTag(''),
+  daqPartitions = cms.uint32(1),
+  l1tIgnoreMask = cms.bool( False ),
+  l1techIgnorePrescales = cms.bool( False ),
+  throw  = cms.bool( True )
+),
+
+			       bJetProducer     = cms.InputTag("myBJetsProducer")              ,
+                               beamSpotInputTag  = cms.InputTag("offlineBeamSpot")             ,
+                               primaryVertexInputTag = cms.InputTag("offlinePrimaryVertices")  ,
+
+
+			       metPtCut      = cms.double(30.)                                    ,# before it was 30. GeV
+                               vertexSrc     = cms.InputTag("offlinePrimaryVertices")             ,
+                               BtagEtaCut    = cms.double(2.4)                                    ,
+                               BtagPtCut     = cms.double(30)                                     ,
+			        DPHiMuNue     = cms.double(1.0)                                    ,
+                                MaxZMass      = cms.double(102.0)                                  ,
+                                MinZMAss      = cms.double(78.0)                                   ,
+                                JetsPtCut     = cms.double(30.)                                    ,
+                                JetsEtaCut    = cms.double(3.0)                                    ,
+                                ElecPtCut     = cms.double(20.)                                    ,
+                                ElecEtaCut    = cms.double(2.5)                                    ,
+                                muonPtCut     = cms.double(20)                                     ,
+                                muonEtaCut    = cms.double(2.4)                                    ,
+                                doTruthMatch  = cms.bool(False)                                    ,
+                                #realdata      = cms.bool(True)                                    ,
+                                realdata      = cms.bool(False)                                    ,
+                                doPileup      = cms.bool(False)                                    ,
+                                printDebug    = cms.bool(True)
+
+                              )
+print "after topAna_leptonsZeroIso"
+
+###################################  Systematcis    ##################################################################################
+process.topAna_Systematic = cms.EDAnalyzer('TbZTopAnalyzer_Systematic',
+
+MutriggerSelection   = cms.string('(HLT_Mu17_Mu8_* OR HLT_Mu17_TkMu8_*)'),
+MuEGtriggerSelection = cms.string('(HLT_Mu17_Ele8_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_* OR HLT_Mu8_Ele17_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_*)'),
+EtriggerSelection    = cms.string('(HLT_Ele17_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_Ele8_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_*)'),
+
+triggerConfiguration =  cms.PSet(
+  hltResults = cms.InputTag('TriggerResults','','HLT'),
+  l1tResults = cms.InputTag(''),
+  daqPartitions = cms.uint32(1),
+  l1tIgnoreMask = cms.bool( False ),
+  l1techIgnorePrescales = cms.bool( False ),
+  throw  = cms.bool( True )
+),
+
+
+  bJetProducer     = cms.InputTag("myBJetsProducer")              ,
+                               beamSpotInputTag  = cms.InputTag("offlineBeamSpot")             ,
+                               primaryVertexInputTag = cms.InputTag("offlinePrimaryVertices")  ,
+
+
+                               metPtCut      = cms.double(30.)                                    ,# before it was 30. GeV
+                               vertexSrc     = cms.InputTag("offlinePrimaryVertices")             ,
+                               BtagEtaCut    = cms.double(2.4)                                    ,
+                               BtagPtCut     = cms.double(30)                                     ,
+                                DPHiMuNue     = cms.double(1.0)                                    ,
+                                MaxZMass      = cms.double(102.0)                                  ,
+                                MinZMAss      = cms.double(78.0)                                   ,
+                                JetsPtCut     = cms.double(30.)                                    ,
+                                JetsEtaCut    = cms.double(3.0)                                    ,
+                                ElecPtCut     = cms.double(20.)                                    ,
+                                ElecEtaCut    = cms.double(2.5)                                    ,
+                                muonPtCut     = cms.double(20)                                     ,
+                                muonEtaCut    = cms.double(2.4)                                    ,
+                                doTruthMatch  = cms.bool(False)                                    ,
+                                #realdata      = cms.bool(True)                                    ,
+                                realdata      = cms.bool(False)                                    ,
+                                doPileup      = cms.bool(False)                                    ,
+                                printDebug    = cms.bool(True)
+
+                              )
+print "after topAna_Systematic"
+
 ####top analyzer#####
 process.topAna = cms.EDAnalyzer('TbZTopAnalyzer',
 
@@ -226,7 +442,7 @@ triggerConfiguration =  cms.PSet(
                                #  cms.InputTag('elPFIsoValueNeutral03PFIdPFIso')),                                
                                 
                                 
-                                metPtCut      = cms.double(30.)                                    ,
+                                metPtCut      = cms.double(30.)                                    ,# before it was 30. GeV
                                 vertexSrc     = cms.InputTag("offlinePrimaryVertices")             ,
                                 
 				BtagEtaCut    = cms.double(2.4)                                    ,
@@ -242,7 +458,7 @@ triggerConfiguration =  cms.PSet(
                                 ElecPtCut     = cms.double(20.)                                    ,
 				ElecEtaCut    = cms.double(2.5)                                    ,
 			        muonPtCut     = cms.double(20)                                     ,		
-				muonEtaCut    = cms.double(2.1)                                    ,
+				muonEtaCut    = cms.double(2.4)                                    ,
                                 doTruthMatch  = cms.bool(False)                                    ,			                             
                                 #realdata      = cms.bool(True)                                    ,
                                 realdata      = cms.bool(False)                                    ,
@@ -256,6 +472,6 @@ print "after 2"
 #process.p = cms.Path(process.myProducerLabel*process.demo*process.dump )
 #process.p = cms.Path(process.myProducerLabel*process.myJetProdLabel*process.kt6PFJetsForIsolation*process.pfiso*process.myElectronProdLabel*process.Z2mumu*process.Z2ep*process.Acceptance*process.topAna)
 #process.p = cms.Path(process.myProducerLabel*process.myLoseMuons*process.myJetProdLabel*process.kt6PFJetsForIsolation*process.pfiso*process.myElectronProdLabel*process.topAna)
-process.p = cms.Path(process.topAna)
+process.p = cms.Path(process.topAnaLoosetight*process.topAnaLooseLept*process.topAna_lepZeroIso*process.topAna_Systematic*process.topAna)
 #process.p = cms.Path(process.myProducerLabel*process.myJetProdLabel*process.kt6PFJetsForIsolation*process.pfiso*process.myElectronProdLabel*process.Z2mumu*process.Z2ep*process.topAna)
 print "after 3" 
