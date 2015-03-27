@@ -1,1 +1,5 @@
 Hello I totally changed the instructions file.. 
+
+Twiki page for Git instructions:
+
+http://rogerdudler.github.io/git-guide/
